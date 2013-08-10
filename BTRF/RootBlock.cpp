@@ -3,7 +3,7 @@
 
 namespace BTRF {
 
-RootBlock::RootBlock()
+RootBlock::RootBlock(TML::TMLFile *tmlFile) : tmlFile(tmlFile)
 {
 	//ctor
 }
@@ -11,6 +11,27 @@ RootBlock::RootBlock()
 void RootBlock::addBlock(Block *block) {
 	blocks.insert(std::pair<TemplateGuid, Block*>(block->getTemplateGuid(), block));
 	blockList.push_back(block);
+}
+
+void RootBlock::addString(int index, const char* str) {
+	stringList.emplace(index, std::string(str));
+}
+
+const char *RootBlock::getString(int index) {
+	return stringList.at(index).c_str();
+}
+
+void RootBlock::addTemplate(int index, TemplateGuid guid, int usedField) {
+	TemplateInfo templateInfo = {guid, usedField};
+	templateList.emplace(index, templateInfo);
+}
+
+TemplateGuid RootBlock::getTemplateGuid(int index) {
+	return templateList.at(index).guid;
+}
+
+int RootBlock::getTemplateUsedField(int index) {
+	return templateList.at(index).usedFieldsNum;
 }
 
 void RootBlock::dumpToStdout() {

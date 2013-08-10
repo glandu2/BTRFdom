@@ -35,7 +35,7 @@ enum ElementType {
 	ET_QWord = 0x4,
 	ET_Double = 0x6,
 	ET_WString = 0x8,
-	ET_Dict = 0xA,
+	ET_Dict = 0xA
 };
 
 union TemplateGuid {

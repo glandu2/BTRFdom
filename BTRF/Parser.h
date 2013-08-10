@@ -17,33 +17,27 @@ class Block;
 
 class Parser
 {
-	public:
-		Parser(TML::TMLFile *tmlData) : tmlData(tmlData) {}
+public:
+	Parser(TML::TMLFile *tmlData) : tmlData(tmlData) {}
 
-		RootBlock *parse(const char* filename);
+	RootBlock *parse(const char* filename);
 
-	protected:
-		Block *parseSubBlock(Block* block, TML::Block *tmlField);
+protected:
+	Block *parseSubBlock(Block* block, TML::Block *tmlField);
 
-	private:
-		struct __attribute__((packed)) GlobalHeader  {
-			char btrf[4];
-			int header_size;	//always 4
-			short major_version;
-			short minor_version;
-		};
+private:
+	struct __attribute__((packed)) GlobalHeader  {
+		char btrf[4];
+		int header_size;	//always 4
+		short major_version;
+		short minor_version;
+	};
 
-		const GlobalHeader *header;
+	const GlobalHeader *header;
 
-		struct TemplateInfo {
-			int templateNum;
-			const TemplateGuid *guids;
-			const short *fieldNumbers;
-		} templateList;
-
-		File *file;
-		TML::TMLFile *tmlData;
-		std::vector<const char*> stringList;
+	RootBlock *rootBlock;
+	File *file;
+	TML::TMLFile *tmlData;
 
 };
 

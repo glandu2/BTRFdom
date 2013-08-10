@@ -789,7 +789,7 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 							getBlock(0);	//sub_mtl_block_array
 
 		int i;
-		for(i = 0; i < currentBlock->getNumElement(); i++) {
+		for(i = 0; i < currentBlock->getElementNumber(); i++) {
 			BTRF::Block *materialInfo = currentBlock->getBlock(i);
 
 			material.mtl_name =     materialInfo->getBlock(0)->getData<const char*>(0);
@@ -811,7 +811,7 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 		BTRF::Block *subBlock = currentBlock->getBlock(0);
 
 		int i;
-		for(i = 0; i < subBlock->getNumElement(); i++) {
+		for(i = 0; i < subBlock->getElementNumber(); i++) {
 			BTRF::Block *geometryInfo = subBlock->getBlock(i);
 			BTRF::Block *meshInfo;
 
@@ -820,18 +820,18 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 			geometry.channel_id = geometryInfo->getBlock(2)->getData<int>(0);
 
 			meshInfo = geometryInfo->getBlock(3);
-			for(int j = 0; j < meshInfo->getNumElement(); j++) {
+			for(int j = 0; j < meshInfo->getElementNumber(); j++) {
 				BTRF::Block *meshBlock = meshInfo->getBlock(j);
 				BTRF::Block *meshData = meshBlock->getBlock(1)->getBlock(0);
 
 				mesh.textureId = meshBlock->getBlock(0)->getData<int>(0);
-				mesh.vertexCount = meshData->getBlock(1)->getNumElement()/3;
+				mesh.vertexCount = meshData->getBlock(1)->getElementNumber()/3;
 				mesh.vertex_array = meshData->getBlock(1)->getDataPtr<Vector3D*>();
-				mesh.normalCount = meshData->getBlock(2)->getNumElement()/3;
+				mesh.normalCount = meshData->getBlock(2)->getElementNumber()/3;
 				mesh.normal_array = meshData->getBlock(2)->getDataPtr<Vector3D*>();
-				mesh.texelCount = meshData->getBlock(3)->getNumElement()/2;
+				mesh.texelCount = meshData->getBlock(3)->getElementNumber()/2;
 				mesh.texel_array = meshData->getBlock(3)->getDataPtr<Vector2D*>();
-				mesh.indexCount = meshBlock->getBlock(2)->getNumElement();
+				mesh.indexCount = meshBlock->getBlock(2)->getElementNumber();
 				mesh.index_array = meshBlock->getBlock(2)->getDataPtr<short*>();
 
 				BTRF::Block *boneInfo = meshData->getBlock(5);
@@ -839,13 +839,13 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 				mesh.boneVerticesAssociation.clear();
 				mesh.boneVerticesAssociation.resize(mesh.vertexCount);
 				mesh.boneVertices.clear();
-				mesh.boneVertices.resize(boneInfo->getNumElement());
+				mesh.boneVertices.resize(boneInfo->getElementNumber());
 				int k;
-				for(k = 0; k < boneInfo->getNumElement(); k++) {
+				for(k = 0; k < boneInfo->getElementNumber(); k++) {
 					Bone& bone = mesh.boneVertices[k];
 
 					bone.name = boneInfo->getBlock(k)->getBlock(0)->getData<const char*>(0);
-					bone.verticeCount = boneInfo->getBlock(k)->getBlock(1)->getNumElement()/2;
+					bone.verticeCount = boneInfo->getBlock(k)->getBlock(1)->getElementNumber()/2;
 					bone.boneVertex = boneInfo->getBlock(k)->getBlock(1)->getDataPtr<Bone::VertexInfluence*>();
 					bone.vertexOffset = boneInfo->getBlock(k)->getBlock(2)->getDataPtr<Vector3D*>();
 
@@ -870,7 +870,7 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 
 		//Bones matrix
 		subBlock = currentBlock->getBlock(1);
-		for(i = 0; i < subBlock->getNumElement(); i++) {
+		for(i = 0; i < subBlock->getElementNumber(); i++) {
 			BTRF::Block *boneBlock = subBlock->getBlock(i);
 
 			model.boneTransformMatrix[i].name = boneBlock->getBlock(0)->getData<const char*>(0);
@@ -884,24 +884,24 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 		BTRF::Block *subBlock = currentBlock->getBlock(1);
 
 		int i;
-		for(i = 0; i < subBlock->getNumElement(); i++) {
+		for(i = 0; i < subBlock->getElementNumber(); i++) {
 			BTRF::Block *channelBlock = subBlock->getBlock(i);
 			AnimationChannel animationModel;
 
-			for(int j = 0; j < channelBlock->getBlock(4)->getNumElement(); j++) {
+			for(int j = 0; j < channelBlock->getBlock(4)->getElementNumber(); j++) {
 				BTRF::Block *boneBlock = channelBlock->getBlock(4)->getBlock(j);
 				BoneAnimation boneAnim;
 
 				boneAnim.boneName = boneBlock->getBlock(0)->getData<const char*>(0);
 
-				boneAnim.pos_time_count = boneBlock->getBlock(4)->getNumElement();
+				boneAnim.pos_time_count = boneBlock->getBlock(4)->getElementNumber();
 				boneAnim.pos_time_array = boneBlock->getBlock(4)->getDataPtr<int*>();
-				boneAnim.pos_key_count = boneBlock->getBlock(5)->getNumElement();
+				boneAnim.pos_key_count = boneBlock->getBlock(5)->getElementNumber();
 				boneAnim.pos_key_array = boneBlock->getBlock(5)->getDataPtr<float*>();
 
-				boneAnim.rot_time_count = boneBlock->getBlock(6)->getNumElement();
+				boneAnim.rot_time_count = boneBlock->getBlock(6)->getElementNumber();
 				boneAnim.rot_time_array = boneBlock->getBlock(6)->getDataPtr<int*>();
-				boneAnim.rot_key_count = boneBlock->getBlock(7)->getNumElement();
+				boneAnim.rot_key_count = boneBlock->getBlock(7)->getElementNumber();
 				boneAnim.rot_key_array = boneBlock->getBlock(7)->getDataPtr<float*>();
 
 				animationModel.boneAnims.push_back(boneAnim);

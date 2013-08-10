@@ -9,7 +9,7 @@
 #include <iomanip>
 
 namespace TML {
-	class Block;
+class Block;
 }
 
 namespace BTRF {
@@ -18,32 +18,37 @@ class BTRFFile;
 
 class Block
 {
-	public:
-		Block() : numElement(0), data(0) {};
+public:
+	Block() : numElement(0), data(0) {}
 
-		void* getData() { return data; }
-		ElementType getType();
-		const char* getName();
-		int getNumElement() { return numElement; }
-		TemplateGuid getTemplateGuid() { return templateGuid; }
+	void setFieldInfo(TML::Block *fieldInfo) { this->fieldInfo = fieldInfo; }
+	void setElementNumber(int num) { numElement = num; }
+	void setTemplateGuid(TemplateGuid guid) { templateGuid = guid; }
+	void setData(void *data) { this->data = data; }
 
-		void dumpToStdout();
+	TML::Block *getFieldInfo() { return fieldInfo; }
+	int getElementNumber() { return numElement; }
+	TemplateGuid getTemplateGuid() { return templateGuid; }
+	void* getData() { return data; }
 
-		template<typename T> T getData(int index);
-		template<typename T> T getDataPtr();
-		Block* getBlock(int index);
+	ElementType getType();
+	const char* getName();
+
+	void dumpToStdout();
+
+	template<typename T> T getData(int index);
+	template<typename T> T getDataPtr();
+	Block* getBlock(int index);
 
 
-	protected:
-		static ElementType getTypeFromByte(char data);
+protected:
+	static ElementType getTypeFromByte(char data);
 
-	private:
-		friend class Parser;
-
-		TML::Block *fieldInfo;
-		int numElement;
-		void* data;
-		TemplateGuid templateGuid;
+private:
+	TML::Block *fieldInfo;
+	int numElement;
+	void* data;
+	TemplateGuid templateGuid;
 };
 
 

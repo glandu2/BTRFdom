@@ -34,6 +34,9 @@ RootBlock *Parser::parse(const char* filename) {
 		return nullptr;
 	}
 
+
+	rootBlock = new RootBlock(tmlData);
+
 	nextHeaderPos = header->header_size + 8;
 
 	//Read template list
@@ -41,9 +44,13 @@ RootBlock *Parser::parse(const char* filename) {
 	blockSize = *file->read<int>(4);
 	nextHeaderPos += blockSize + 4;
 
-	templateList.templateNum = blockSize/18;
-	templateList.guids = file->read<TemplateGuid>(16*templateList.templateNum);
-	templateList.fieldNumbers = file->read<short>(2*templateList.templateNum);
+	int templateNum = blockSize/18;
+	const TemplateGuid *guids = file->read<TemplateGuid>(16*templateNum);
+	const short *fieldNumbers = file->read<short>(2*templateNum);
+
+	for(int i = 0; i < templateNum; i++) {
+		rootBlock->addTemplate(i, guids[i], fieldNumbers[i]);
+	}
 
 	//Read string list
 	file->setPos(nextHeaderPos);
@@ -51,9 +58,9 @@ RootBlock *Parser::parse(const char* filename) {
 	nextHeaderPos += blockSize + 4;
 
 	int stringNum = *file->read<int>(4);
-	stringList.resize(stringNum);
 	for(int i = 0; i < stringNum; i++) {
-		const char* currentString = stringList[i] = file->read<char>(0);
+		const char *currentString = file->read<char>(0);
+		rootBlock->addString(i, currentString);
 		file->read<void>(strlen(currentString)+1);
 	}
 
@@ -61,8 +68,6 @@ RootBlock *Parser::parse(const char* filename) {
 	file->setPos(nextHeaderPos);
 	blockSize = *file->read<int>(4);
 	nextHeaderPos += blockSize + 4;
-
-	RootBlock *rootBlock = new RootBlock;
 
 	int numBlocks = *file->read<int>(4);
 	char type;
@@ -74,8 +79,8 @@ RootBlock *Parser::parse(const char* filename) {
 		file->read<int>(4);	//blockSize
 		templateIndex = *file->read<short>(2) - 1;
 
-		TML::Block *templateField = tmlData->getTemplate(templateList.guids[templateIndex]);
-		templateField->setFieldCount(templateList.fieldNumbers[templateIndex]);
+		TML::Block *templateField = rootBlock->getTmlFile()->getTemplate(rootBlock->getTemplateGuid(templateIndex));
+		templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
 		Block *block = new Block;
 		if(!parseSubBlock(block, templateField)) {
 			std::cerr << "Premature end of file\n";
@@ -94,90 +99,94 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 	Block *subBlocks;
 
 	ElementType elementType = tmlField->getType();
-	block->fieldInfo = tmlField;
-	block->numElement = block->fieldInfo->getFieldCount();
+	block->setFieldInfo(tmlField);
+	block->setElementNumber(block->getFieldInfo()->getFieldCount());
 
-	if(elementType == ET_TemplateArray || !block->numElement)
+	if(elementType == ET_TemplateArray || !block->getElementNumber())
 		blockSize = *file->read<int>(4);
 
 	switch(elementType) {
 	case ET_TemplateArray:
-		if(!block->numElement) {
+		if(!block->getElementNumber()) {
 			templateIndex = *file->read<short>(2) - 1;
 
-			block->templateGuid = templateList.guids[templateIndex];
-			TML::Block *templateField = block->fieldInfo->getField(0);
-			templateField->setFieldCount(templateList.fieldNumbers[templateIndex]);
+			block->setTemplateGuid(rootBlock->getTemplateGuid(templateIndex));
+			TML::Block *templateField = block->getFieldInfo()->getField(0);
+			templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
 
-			block->numElement = *file->read<int>(4);
+			block->setElementNumber(*file->read<int>(4));
 
-			block->data = subBlocks = new Block[block->numElement];
-			for(i = 0; i < block->numElement; i++) {
+			subBlocks = new Block[block->getElementNumber()];
+			block->setData(subBlocks);
+			for(i = 0; i < block->getElementNumber(); i++) {
 				if(templateField->getHasVariableSize())
 					file->read<int>(4);	//elementSize
 				parseSubBlock(&subBlocks[i], templateField);
 			}
 		} else {
-			block->data = subBlocks = new Block[block->numElement];
-			for(i = 0; i < block->numElement; i++)
-				parseSubBlock(&subBlocks[i], block->fieldInfo->getField(0));
+			subBlocks = new Block[block->getElementNumber()];
+			block->setData(subBlocks);
+			for(i = 0; i < block->getElementNumber(); i++)
+				parseSubBlock(&subBlocks[i], block->getFieldInfo()->getField(0));
 		}
 		break;
 
 	case ET_Template:
-		block->templateGuid = block->fieldInfo->getTemplateGuid();
-		block->data = subBlocks = new Block[block->numElement];
+		block->setTemplateGuid(block->getFieldInfo()->getTemplateGuid());
+		subBlocks = new Block[block->getElementNumber()];
+		block->setData(subBlocks);
 
-		for(i = 0; i < block->numElement; i++) {
-			parseSubBlock(&subBlocks[i], block->fieldInfo->getField(i));
+		for(i = 0; i < block->getElementNumber(); i++) {
+			parseSubBlock(&subBlocks[i], block->getFieldInfo()->getField(i));
 		}
 		break;
 
 	case ET_Char:
 	case ET_UChar:
-		if(!block->numElement) {
+		if(!block->getElementNumber()) {
 			file->read<char>(1);	//type
-			block->numElement = (blockSize-1) / sizeof(char);
+			block->setElementNumber((blockSize-1) / sizeof(char));
 		}
-		block->data = const_cast<void*>(file->read<void>(block->numElement*sizeof(char)));
+		block->setData(const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(char))));
 		break;
 
 	case ET_Word:
-		if(!block->numElement) {
+		if(!block->getElementNumber()) {
 			file->read<char>(1);	//type
-			block->numElement = (blockSize-1) / sizeof(short);
+			block->setElementNumber((blockSize-1) / sizeof(short));
 		}
-		block->data = const_cast<void*>(file->read<void>(block->numElement*sizeof(short)));
+		block->setData(const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(short))));
 		break;
 
-	case ET_DWord:
-		if(!block->numElement) {
+	case ET_DWord:é
+		if(!block->getElementNumber()) {
 			file->read<char>(1);	//type
-			block->numElement = (blockSize-1) / sizeof(int);
+			block->setElementNumber((blockSize-1) / sizeof(int));
 		}
-		block->data = const_cast<void*>(file->read<void>(block->numElement*sizeof(int)));
+		block->setData(const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(int))));
 		break;
 
 	case ET_Float:
-		if(!block->numElement) {
+		if(!block->getElementNumber()) {
 			file->read<char>(1);	//type
-			block->numElement = (blockSize-1) / sizeof(float);
+			block->setElementNumber((blockSize-1) / sizeof(float));
 		}
-		block->data = const_cast<void*>(file->read<void>(block->numElement*sizeof(float)));
+		block->setData(const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(float))));
 		break;
 
 	case ET_String:
-		if(!block->numElement) {
+		if(!block->getElementNumber()) {
 			file->read<char>(1);	//type
-			block->numElement = (blockSize-1) / sizeof(int);
+			block->setElementNumber((blockSize-1) / sizeof(int));
 		}
-		block->data = new(std::nothrow) const char*[block->numElement];
-		for(i=0; i<block->numElement; i++) {
+		const char **string = new(std::nothrow) const char*[block->getElementNumber()];
+		block->setData(string);
+		for(i = 0; i < block->getElementNumber(); i++) {
 			int stringId = *file->read<int>(4);
 			if(stringId == 0)
-				static_cast<const char**>(block->data)[i] = 0;
+				string[i] = 0;
 			else {
-				static_cast<const char**>(block->data)[i] = stringList[stringId-1];
+				string[i] = rootBlock->getString(stringId-1);
 			}
 		}
 		break;
