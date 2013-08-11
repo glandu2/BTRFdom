@@ -79,9 +79,12 @@ RootBlock *Parser::parse(const char* filename) {
 		file->read<int>(4);	//blockSize
 		templateIndex = *file->read<short>(2) - 1;
 
+		Block *block = new Block;
+		block->setTemplateId(templateIndex);
+
 		TML::Block *templateField = rootBlock->getTmlFile()->getTemplate(rootBlock->getTemplateGuid(templateIndex));
 		templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
-		Block *block = new Block;
+
 		if(!parseSubBlock(block, templateField)) {
 			std::cerr << "Premature end of file\n";
 			break;
@@ -301,7 +304,6 @@ void Parser::writeFile(const char* filename, RootBlock *rootBlock) {
 }
 
 void Parser::writeBlock(FILE* file, Block *block) {
-	int blockSize;
 	int i, value;
 	int blockSizePosition;
 
@@ -325,15 +327,17 @@ void Parser::writeBlock(FILE* file, Block *block) {
 
 			for(i = 0; i < block->getElementNumber(); i++) {
 				int elementSizePosition = 0;
-				if(block->getFieldInfo()->getHasVariableSize()) {
+				Block *subBlock = block->getBlock(i);
+
+				if(subBlock->getFieldInfo()->getHasVariableSize()) {
 					elementSizePosition = ftell(file);
 					value = 0;
 					fwrite(&value, 1, 4, file);
 				}
 
-				writeBlock(file, block->getBlock(i));
+				writeBlock(file, subBlock);
 
-				if(block->getFieldInfo()->getHasVariableSize()) {
+				if(subBlock->getFieldInfo()->getHasVariableSize()) {
 					value = ftell(file) - elementSizePosition - 4;
 					fseek(file, elementSizePosition, SEEK_SET);
 					fwrite(&value, 1, 4, file);
