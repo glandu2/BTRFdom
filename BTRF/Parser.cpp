@@ -49,7 +49,7 @@ RootBlock *Parser::parse(const char* filename) {
 	const short *fieldNumbers = file->read<short>(2*templateNum);
 
 	for(int i = 0; i < templateNum; i++) {
-		rootBlock->addTemplate(i, guids[i], fieldNumbers[i]);
+		rootBlock->addTemplate(guids[i], fieldNumbers[i]);
 	}
 
 	//Read string list
@@ -60,7 +60,7 @@ RootBlock *Parser::parse(const char* filename) {
 	int stringNum = *file->read<int>(4);
 	for(int i = 0; i < stringNum; i++) {
 		const char *currentString = file->read<char>(0);
-		rootBlock->addString(i, currentString);
+		rootBlock->addString(currentString);
 		file->read<void>(strlen(currentString)+1);
 	}
 
@@ -98,7 +98,7 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 	short templateIndex;
 
 	ElementType elementType = tmlField->getType();
-	block->setFieldInfo(tmlField);
+	block->construct(tmlField, rootBlock);
 	block->setElementNumber(block->getFieldInfo()->getFieldCount());
 
 	if(elementType == ET_TemplateArray || !block->getElementNumber())
@@ -109,27 +109,26 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 		if(!block->getElementNumber()) {
 			templateIndex = *file->read<short>(2) - 1;
 
-			block->setTemplateGuid(rootBlock->getTemplateGuid(templateIndex));
+			block->setTemplateId(templateIndex);
 			TML::Block *templateField = block->getFieldInfo()->getField(0);
 			templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
 
 			block->setElementNumber(*file->read<int>(4));
 
-			block->setData(ET_Template);
+			block->setData(ET_TemplateArray);
 			for(i = 0; i < block->getElementNumber(); i++) {
 				if(templateField->getHasVariableSize())
 					file->read<int>(4);	//elementSize
 				parseSubBlock(block->getBlock(i), templateField);
 			}
 		} else {
-			block->setData(ET_Template);
+			block->setData(ET_TemplateArray);
 			for(i = 0; i < block->getElementNumber(); i++)
 				parseSubBlock(block->getBlock(i), block->getFieldInfo()->getField(0));
 		}
 		break;
 
 	case ET_Template:
-		block->setTemplateGuid(block->getFieldInfo()->getTemplateGuid());
 		block->setData(ET_Template);
 
 		for(i = 0; i < block->getElementNumber(); i++) {
@@ -179,9 +178,9 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 		for(i = 0; i < block->getElementNumber(); i++) {
 			int stringId = *file->read<int>(4);
 			if(stringId == 0)
-				block->getDataPtr<const char**>()[i] = 0;
+				block->getDataPtr<int*>()[i] = -1;
 			else {
-				block->getDataPtr<const char**>()[i] = rootBlock->getString(stringId-1);
+				block->getDataPtr<int*>()[i] = stringId-1;
 			}
 		}
 		break;
@@ -193,6 +192,222 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 	}
 
 	return block;
+}
+
+
+void Parser::writeFile(const char* filename, RootBlock *rootBlock) {
+	FILE *file;
+	GlobalHeader header;
+	int value;
+	int blockSizePosition;
+
+	file = fopen(filename, "wb");
+	if(!file)
+		return;
+
+	header.btrf[0] = 'B';
+	header.btrf[1] = 'T';
+	header.btrf[2] = 'R';
+	header.btrf[3] = 'F';
+	header.header_size = 4;
+	header.major_version = 1;
+	header.minor_version = 1;
+	fwrite(&header, 1, sizeof(header), file);
+
+	value = rootBlock->getTemplateNum();
+	value *= 18;
+
+	//Padding
+	if(value % 4)
+		value += 4 - (value % 4);
+	fwrite(&value, 1, 4, file);
+	for(int i = 0; i < rootBlock->getTemplateNum(); i++) {
+		TemplateGuid guid = rootBlock->getTemplateGuid(i);
+		fwrite(&guid, 1, sizeof(TemplateGuid), file);
+	}
+	for(int i = 0; i < rootBlock->getTemplateNum(); i++) {
+		short usedFields = rootBlock->getTemplateUsedField(i);
+		fwrite(&usedFields, 1, sizeof(short), file);
+	}
+
+	//Padding
+	value = '1';
+	while(ftell(file) % 4) {
+		fwrite(&value, 1, 1, file);
+		value++;
+	}
+
+	blockSizePosition = ftell(file);
+	value = 0;
+	fwrite(&value, 1, 4, file);  //real block size will be written after
+
+	value = rootBlock->getStringNum();
+	fwrite(&value, 1, 4, file);
+	for(int i = 0; i < rootBlock->getStringNum(); i++) {
+		const char *str = rootBlock->getString(i);
+		fwrite(str, strlen(str)+1, 1, file);
+	}
+	//wstring, not supported
+	value = 0;
+	fwrite(&value, 1, 4, file);
+
+	//Padding
+	value = '1';
+	while(ftell(file) % 4) {
+		fwrite(&value, 1, 1, file);
+		value++;
+	}
+	value = ftell(file) - blockSizePosition - 4;
+	fseek(file, blockSizePosition, SEEK_SET);
+	fwrite(&value, 1, 4, file);
+	fseek(file, value, SEEK_CUR);
+
+	//data
+	blockSizePosition = ftell(file);
+	value = 0;
+	fwrite(&value, 1, 4, file);
+
+
+	//write data blocks
+	value = rootBlock->getBlockNum();
+	fwrite(&value, 1, 4, file);
+	for(int i = 0; i < rootBlock->getBlockNum(); i++) {
+		int subBlockSizePosition;
+		Block *currentBlock = rootBlock->getBlock(i);
+
+		//Dummy + type
+		value = 0x09000000;  //3 null bytes + 0x9 as type
+		fwrite(&value, 1, 4, file);
+
+		//Block size (latter)
+		subBlockSizePosition = ftell(file);
+		value = 0;
+		fwrite(&value, 1, 4, file);
+
+		value = currentBlock->getTemplateId() + 1;
+		fwrite(&value, 1, 2, file);
+
+		writeBlock(file, currentBlock);
+
+		value = ftell(file) - subBlockSizePosition - 4;
+		fseek(file, subBlockSizePosition, SEEK_SET);
+		fwrite(&value, 1, 4, file);
+		fseek(file, value, SEEK_CUR);
+	}
+
+	value = ftell(file) - blockSizePosition - 4;
+	fseek(file, blockSizePosition, SEEK_SET);
+	fwrite(&value, 1, 4, file);
+}
+
+void Parser::writeBlock(FILE* file, Block *block) {
+	int blockSize;
+	int i, value;
+	int blockSizePosition;
+
+
+	ElementType elementType = block->getType();
+
+	if(elementType == ET_TemplateArray || !block->getFieldInfo()->getFieldCount()) {
+		blockSizePosition = ftell(file);
+		value = 0;
+		fwrite(&value, 1, 4, file);
+	}
+
+	switch(elementType) {
+	case ET_TemplateArray:
+		if(!block->getFieldInfo()->getFieldCount()) {
+			value = block->getTemplateId() + 1;
+			fwrite(&value, 1, 2, file);
+
+			value = block->getElementNumber();
+			fwrite(&value, 1, 4, file);
+
+			for(i = 0; i < block->getElementNumber(); i++) {
+				int elementSizePosition = 0;
+				if(block->getFieldInfo()->getHasVariableSize()) {
+					elementSizePosition = ftell(file);
+					value = 0;
+					fwrite(&value, 1, 4, file);
+				}
+
+				writeBlock(file, block->getBlock(i));
+
+				if(block->getFieldInfo()->getHasVariableSize()) {
+					value = ftell(file) - elementSizePosition - 4;
+					fseek(file, elementSizePosition, SEEK_SET);
+					fwrite(&value, 1, 4, file);
+					fseek(file, value, SEEK_CUR);
+				}
+			}
+		} else {
+			for(i = 0; i < block->getElementNumber(); i++)
+				writeBlock(file, block->getBlock(i));
+		}
+		break;
+
+	case ET_Template:
+		for(i = 0; i < block->getElementNumber(); i++) {
+			writeBlock(file, block->getBlock(i));
+		}
+		break;
+
+	case ET_Char:
+	case ET_UChar:
+		if(!block->getFieldInfo()->getFieldCount()) {
+			value = ET_Char;
+			fwrite(&value, 1, 1, file);
+		}
+		fwrite(block->getDataPtr<char*>(), sizeof(char), block->getElementNumber(), file);
+		break;
+
+	case ET_Word:
+		if(!block->getFieldInfo()->getFieldCount()) {
+			value = elementType;
+			fwrite(&value, 1, 1, file);
+		}
+		fwrite(block->getDataPtr<short*>(), sizeof(short), block->getElementNumber(), file);
+		break;
+
+	case ET_DWord:
+		if(!block->getFieldInfo()->getFieldCount()) {
+			value = elementType;
+			fwrite(&value, 1, 1, file);
+		}
+		fwrite(block->getDataPtr<int*>(), sizeof(int), block->getElementNumber(), file);
+		break;
+
+	case ET_Float:
+		if(!block->getFieldInfo()->getFieldCount()) {
+			value = elementType;
+			fwrite(&value, 1, 1, file);
+		}
+		fwrite(block->getDataPtr<float*>(), sizeof(float), block->getElementNumber(), file);
+		break;
+
+	case ET_String:
+		if(!block->getFieldInfo()->getFieldCount()) {
+			value = elementType;
+			fwrite(&value, 1, 1, file);
+		}
+		for(i = 0; i < block->getElementNumber(); i++) {
+			value = block->getData<int>(i)+1;
+			fwrite(&value, 1, 4, file);
+		}
+		break;
+
+	case ET_None:
+	case ET_Array:
+		fprintf(stderr, "Invalid type None or Array, ignoring\n");
+		break;
+	}
+
+	if(elementType == ET_TemplateArray || !block->getFieldInfo()->getFieldCount()) {
+		value = ftell(file) - blockSizePosition - 4;
+		fseek(file, blockSizePosition, SEEK_SET);
+		fwrite(&value, 1, 4, file);
+		fseek(file, value, SEEK_CUR);
+	}
 }
 
 } // namespace BTRF

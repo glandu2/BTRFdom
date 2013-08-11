@@ -931,6 +931,7 @@ int main(int argc, char* argv[])
 	std::deque<const char*> inputFiles;
 	std::deque<RootBlock*> rootBlocks;
 	const char* outFile = 0;
+	const char* outBtrfFile = 0;
 	bool dumpData = false;
 
 	if(argc <= 1)
@@ -946,6 +947,9 @@ int main(int argc, char* argv[])
 			i++;
 		} else if(!strcmp(argv[i], "--output") && (i+1) < argc) {
 			outFile = argv[i+1];
+			i++;
+		} else if(!strcmp(argv[i], "--output-btrf") && (i+1) < argc) {
+			outBtrfFile = argv[i+1];
 			i++;
 		} else if(!strcmp(argv[i], "--dump")) {
 			dumpData = true;
@@ -989,6 +993,10 @@ int main(int argc, char* argv[])
 	}
 
 	fflush(stdout);
+
+	if(outBtrfFile && rootBlocks.size() >= 1) {
+		parser->writeFile(outBtrfFile, rootBlocks.at(0));
+	}
 
 	if(outFile && rootBlocks.size() >= 1) {
 		outfile = fopen(outFile, "w");

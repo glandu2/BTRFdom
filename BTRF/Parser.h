@@ -22,8 +22,11 @@ public:
 
 	RootBlock *parse(const char* filename);
 
+	void writeFile(const char* filename, RootBlock *rootBlock);
+
 protected:
 	Block *parseSubBlock(Block* block, TML::Block *tmlField);
+	void writeBlock(FILE* file, Block *block);
 
 private:
 	struct __attribute__((packed)) GlobalHeader  {

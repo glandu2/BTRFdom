@@ -20,7 +20,7 @@ enum ElementType {
 };*/
 
 enum ElementType {
-	ET_None = 0x0,
+	/*ET_None = 0x0,
 	ET_Word = 0x28,
 	ET_DWord = 0x29,
 	ET_Float = 0x2A,
@@ -29,7 +29,17 @@ enum ElementType {
 	ET_String = 0x33,
 	ET_Array = 0x34,
 	ET_Template = 0x1F,
-	ET_TemplateArray = 0x3F
+	ET_TemplateArray = 0x3F*/
+	ET_None = 0x0,
+	ET_Char = 0x1,
+	ET_UChar = 0x11,
+	ET_Word = 0x2,
+	ET_DWord = 0x3,
+	ET_Float = 0x5,
+	ET_String = 0x7,
+	ET_Template = 0x9,
+	ET_TemplateArray = 0x12,
+	ET_Array = 0x13
 
 
 	/*ET_QWord = 0x4,

@@ -17,7 +17,10 @@ void Block::setData(ElementType dataType, void *data, int num) {
 	if(num)
 		numElement = num;
 
-	assert(dataType == fieldInfo->getType());
+	if(dataType != fieldInfo->getType()) {
+		fprintf(stderr, "FATAL ! Type is not the same as template file: set %d instead of %d\n", dataType, fieldInfo->getType());
+		abort();
+	}
 
 	freeData();
 
@@ -54,10 +57,10 @@ void Block::setData(ElementType dataType, void *data, int num) {
 		break;
 
 	case ET_String:
-		this->data = new const char*[numElement];
+		this->data = new int[numElement];
 		this->allocatedData = true;
 		if(data)
-			memcpy(this->data, data, sizeof(const char*) * numElement);
+			memcpy(this->data, data, sizeof(int) * numElement);
 		break;
 
 	case ET_Array:
@@ -88,15 +91,9 @@ void Block::setDataPtr(ElementType dataType, void *data, int num) {
 	case ET_Word:
 	case ET_DWord:
 	case ET_Float:
+	case ET_String:
 		this->data = data;
 		this->allocatedData = false;
-		break;
-
-	case ET_String:
-		this->data = new const char*[numElement];
-		this->allocatedData = true;
-		if(data)
-			memcpy(this->data, data, sizeof(const char*) * numElement);
 		break;
 
 	case ET_Array:
@@ -146,7 +143,7 @@ void Block::freeData() {
 			break;
 
 		case ET_String:
-			delete[] reinterpret_cast<const char**>(data);
+			delete[] reinterpret_cast<int*>(data);
 			allocatedData = false;
 			break;
 
@@ -158,6 +155,13 @@ void Block::freeData() {
 		if(allocatedData == false)
 			data = nullptr;
 	}
+}
+
+TemplateGuid Block::getTemplateGuid() {
+	if(templateId != -1)
+		return rootBlock->getTemplateGuid(templateId);
+	else
+		return fieldInfo->getTemplateGuid();
 }
 
 ElementType Block::getType() {
@@ -207,14 +211,16 @@ void Block::dumpToStdout() {
 	case ET_String:
 		std::cout << "String " << getName() << "[" << numElement << "] = \n{\n";
 		for(i=0; i<numElement; i++) {
-			if(static_cast<char**>(data)[i])
-				std::cout << static_cast<char**>(data)[i] << '\n';
+			if(getData<const char*>(i))
+				std::cout << getData<const char*>(i) << '\n';
 			else std::cout << "<NULL>\n";
 		}
 		std::cout << "}";
 		break;
 
-	case ET_Template:
+	case ET_Template: {
+		TemplateGuid templateGuid = getTemplateGuid();
+
 		std::cout << "Template GUID = " << std::hex << std::uppercase <<
 					 (unsigned int)templateGuid.Data1 << '-' << (unsigned int)templateGuid.Data2 << '-' << (unsigned int)templateGuid.Data3 << '-' <<
 					 (unsigned int)templateGuid.Data4[0] << (unsigned int)templateGuid.Data4[1] << '-' << (unsigned int)templateGuid.Data4[2] <<
@@ -224,6 +230,7 @@ void Block::dumpToStdout() {
 			static_cast<Block*>(data)[i].dumpToStdout();
 		std::cout << "}";
 		break;
+	}
 
 	case ET_TemplateArray:
 		std::cout << "Template array " << getName() << "[" << numElement << "] = \n{\n";
@@ -240,6 +247,19 @@ void Block::dumpToStdout() {
 	std::cout << std::resetiosflags((std::ios_base::fmtflags)-1);
 
 	std::cout << '\n';
+}
+
+template<>
+const char * Block::getData<const char*>(int index) {
+   if(index >= numElement) {
+	   std::cerr << "Index too large for data " << getName() << " index " << index << " / " << numElement << '\n';
+	   ::exit(-2);
+   }
+   int id = static_cast<int*>(data)[index];
+   if(id != -1)
+	   return rootBlock->getString(id);
+   else
+	   return nullptr;
 }
 
 } // namespace DIFK

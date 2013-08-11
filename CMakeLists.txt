@@ -2,7 +2,7 @@ project(BTRFdom)
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_VERBOSE_MAKEFILE true)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -static-libgcc -static-libstdc++")
 #for qtcreator
 add_definitions("-D__GXX_EXPERIMENTAL_CXX0X__")
 

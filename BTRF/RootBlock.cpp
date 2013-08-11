@@ -13,17 +13,17 @@ void RootBlock::addBlock(Block *block) {
 	blockList.push_back(block);
 }
 
-void RootBlock::addString(int index, const char* str) {
-	stringList.emplace(index, std::string(str));
+void RootBlock::addString(const char* str) {
+	stringList.push_back(std::string(str));
 }
 
 const char *RootBlock::getString(int index) {
 	return stringList.at(index).c_str();
 }
 
-void RootBlock::addTemplate(int index, TemplateGuid guid, int usedField) {
+void RootBlock::addTemplate(TemplateGuid guid, int usedField) {
 	TemplateInfo templateInfo = {guid, usedField};
-	templateList.emplace(index, templateInfo);
+	templateList.push_back(templateInfo);
 }
 
 TemplateGuid RootBlock::getTemplateGuid(int index) {

@@ -8,6 +8,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include "RootBlock.h"
+
 namespace TML {
 class Block;
 }
@@ -17,17 +19,20 @@ namespace BTRF {
 class Block
 {
 public:
-	Block() : fieldInfo(nullptr), numElement(0), data(nullptr), allocatedData(false) {}
+	Block() : fieldInfo(nullptr), rootBlock(nullptr), numElement(0), data(nullptr), allocatedData(false), templateId(-1) {}
 
-	void setFieldInfo(TML::Block *fieldInfo) { this->fieldInfo = fieldInfo; }
+	void construct(TML::Block *fieldInfo, RootBlock *rootBlock) { this->fieldInfo = fieldInfo; this->rootBlock = rootBlock; }
+
 	void setElementNumber(int num) { numElement = num; }
-	void setTemplateGuid(TemplateGuid guid) { templateGuid = guid; }
+	void setTemplateId(int id) { templateId = id; }
 
 	TML::Block *getFieldInfo() { return fieldInfo; }
 	int getElementNumber() { return numElement; }
-	TemplateGuid getTemplateGuid() { return templateGuid; }
+	int getTemplateId() { return templateId; }
+	TemplateGuid getTemplateGuid();
 
 	//Copy memory
+	//String take a array of index to strings (int [])
 	void setData(ElementType dataType, int num = 0) { setData(dataType, nullptr, num); }
 	void setData(ElementType dataType, void *data, int num = 0);
 
@@ -48,10 +53,11 @@ public:
 
 private:
 	TML::Block *fieldInfo;
+	RootBlock *rootBlock;
 	int numElement;
 	void* data;
 	bool allocatedData;
-	TemplateGuid templateGuid;
+	int templateId;
 };
 
 
@@ -62,6 +68,9 @@ template<typename T> T Block::getData(int index) {
 	}
 	return static_cast<T*>(data)[index];
 }
+
+template<>
+const char * Block::getData<const char*>(int index);
 
 template<typename T> T Block::getDataPtr() {
 	return static_cast<T>(data);
