@@ -158,7 +158,7 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 		block->setData(const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(short))));
 		break;
 
-	case ET_DWord:é
+	case ET_DWord:
 		if(!block->getElementNumber()) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(int));

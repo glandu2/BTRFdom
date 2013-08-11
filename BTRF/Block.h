@@ -23,13 +23,13 @@ public:
 
 	void setFieldInfo(TML::Block *fieldInfo) { this->fieldInfo = fieldInfo; }
 	void setElementNumber(int num) { numElement = num; }
-	void setTemplateGuid(TemplateGuid guid) { templateGuid = guid; }
 	void setData(void *data) { this->data = data; }
+	void setTemplateGuid(TemplateGuid guid) { templateGuid = guid; }
 
 	TML::Block *getFieldInfo() { return fieldInfo; }
 	int getElementNumber() { return numElement; }
-	TemplateGuid getTemplateGuid() { return templateGuid; }
 	void* getData() { return data; }
+	TemplateGuid getTemplateGuid() { return templateGuid; }
 
 	ElementType getType();
 	const char* getName();
