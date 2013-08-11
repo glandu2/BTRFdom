@@ -96,7 +96,6 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 	int blockSize;
 	int i;
 	short templateIndex;
-	Block *subBlocks;
 
 	ElementType elementType = tmlField->getType();
 	block->setFieldInfo(tmlField);
@@ -116,28 +115,25 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 
 			block->setElementNumber(*file->read<int>(4));
 
-			subBlocks = new Block[block->getElementNumber()];
-			block->setData(subBlocks);
+			block->setData(ET_Template);
 			for(i = 0; i < block->getElementNumber(); i++) {
 				if(templateField->getHasVariableSize())
 					file->read<int>(4);	//elementSize
-				parseSubBlock(&subBlocks[i], templateField);
+				parseSubBlock(block->getBlock(i), templateField);
 			}
 		} else {
-			subBlocks = new Block[block->getElementNumber()];
-			block->setData(subBlocks);
+			block->setData(ET_Template);
 			for(i = 0; i < block->getElementNumber(); i++)
-				parseSubBlock(&subBlocks[i], block->getFieldInfo()->getField(0));
+				parseSubBlock(block->getBlock(i), block->getFieldInfo()->getField(0));
 		}
 		break;
 
 	case ET_Template:
 		block->setTemplateGuid(block->getFieldInfo()->getTemplateGuid());
-		subBlocks = new Block[block->getElementNumber()];
-		block->setData(subBlocks);
+		block->setData(ET_Template);
 
 		for(i = 0; i < block->getElementNumber(); i++) {
-			parseSubBlock(&subBlocks[i], block->getFieldInfo()->getField(i));
+			parseSubBlock(block->getBlock(i), block->getFieldInfo()->getField(i));
 		}
 		break;
 
@@ -147,7 +143,7 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(char));
 		}
-		block->setData(const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(char))));
+		block->setDataPtr(elementType, const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(char))));
 		break;
 
 	case ET_Word:
@@ -155,7 +151,7 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(short));
 		}
-		block->setData(const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(short))));
+		block->setDataPtr(elementType, const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(short))));
 		break;
 
 	case ET_DWord:
@@ -163,7 +159,7 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(int));
 		}
-		block->setData(const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(int))));
+		block->setDataPtr(elementType, const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(int))));
 		break;
 
 	case ET_Float:
@@ -171,7 +167,7 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(float));
 		}
-		block->setData(const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(float))));
+		block->setDataPtr(elementType, const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(float))));
 		break;
 
 	case ET_String:
@@ -179,16 +175,20 @@ Block *Parser::parseSubBlock(Block *block, TML::Block *tmlField) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(int));
 		}
-		const char **string = new(std::nothrow) const char*[block->getElementNumber()];
-		block->setData(string);
+		block->setData(elementType);
 		for(i = 0; i < block->getElementNumber(); i++) {
 			int stringId = *file->read<int>(4);
 			if(stringId == 0)
-				string[i] = 0;
+				block->getDataPtr<const char**>()[i] = 0;
 			else {
-				string[i] = rootBlock->getString(stringId-1);
+				block->getDataPtr<const char**>()[i] = rootBlock->getString(stringId-1);
 			}
 		}
+		break;
+
+	case ET_None:
+	case ET_Array:
+		fprintf(stderr, "Invalid type None or Array, ignoring\n");
 		break;
 	}
 

@@ -29,13 +29,13 @@ enum ElementType {
 	ET_String = 0x33,
 	ET_Array = 0x34,
 	ET_Template = 0x1F,
-	ET_TemplateArray = 0x3F,
+	ET_TemplateArray = 0x3F
 
 
-	ET_QWord = 0x4,
+	/*ET_QWord = 0x4,
 	ET_Double = 0x6,
 	ET_WString = 0x8,
-	ET_Dict = 0xA
+	ET_Dict = 0xA*/
 };
 
 union TemplateGuid {

@@ -1,6 +1,7 @@
 #include "Block.h"
 #include <stdlib.h>
 #include "../TML/Block.h"
+#include "RootBlock.h"
 
 char *strdup (const char *s) {
 	char *d = (char*)malloc (strlen (s) + 1);   // Space for length plus nul
@@ -12,17 +13,98 @@ char *strdup (const char *s) {
 
 namespace BTRF {
 
-ElementType Block::getTypeFromByte(char data) {
-	switch(data) {
-	case 0x1: return ET_Char;
-	case 0x2: return ET_Word;
-	case 0x3: return ET_DWord;
-	case 0x5: return ET_Float;
-	case 0x7: return ET_String;
-	case 0x9: return ET_Template;
-	}
+void Block::setData(ElementType dataType, void *data, int num) {
+	if(num)
+		numElement = num;
 
-	return ET_None;
+	assert(dataType == fieldInfo->getType());
+
+	freeData();
+
+	switch(dataType) {
+	case ET_TemplateArray:
+	case ET_Template:
+		this->data = new Block[numElement];
+		this->allocatedData = true;
+		break;
+
+	case ET_Char:
+	case ET_UChar:
+		this->data = new char[numElement];
+		this->allocatedData = true;
+		memcpy(this->data, data, sizeof(char) * numElement);
+		break;
+
+	case ET_Word:
+		this->data = new short[numElement];
+		this->allocatedData = true;
+		memcpy(this->data, data, sizeof(short) * numElement);
+		break;
+
+	case ET_DWord:
+		this->data = new int[numElement];
+		this->allocatedData = true;
+		memcpy(this->data, data, sizeof(int) * numElement);
+		break;
+
+	case ET_Float:
+		this->data = new float[numElement];
+		this->allocatedData = true;
+		memcpy(this->data, data, sizeof(float) * numElement);
+		break;
+
+	case ET_String:
+		this->data = new const char*[numElement];
+		this->allocatedData = true;
+		if(data)
+			memcpy(this->data, data, sizeof(const char*) * numElement);
+		break;
+
+	case ET_Array:
+	case ET_None:
+		this->data = nullptr;
+		this->allocatedData = false;
+		break;
+	}
+}
+
+void Block::setDataPtr(ElementType dataType, void *data, int num) {
+	if(num)
+		numElement = num;
+
+	assert(dataType == fieldInfo->getType());
+
+	freeData();
+
+	switch(dataType) {
+	case ET_TemplateArray:
+	case ET_Template:
+		this->data = new Block[numElement];
+		this->allocatedData = true;
+		break;
+
+	case ET_Char:
+	case ET_UChar:
+	case ET_Word:
+	case ET_DWord:
+	case ET_Float:
+		this->data = data;
+		this->allocatedData = false;
+		break;
+
+	case ET_String:
+		this->data = new const char*[numElement];
+		this->allocatedData = true;
+		if(data)
+			memcpy(this->data, data, sizeof(const char*) * numElement);
+		break;
+
+	case ET_Array:
+	case ET_None:
+		this->data = nullptr;
+		this->allocatedData = false;
+		break;
+	}
 }
 
 Block* Block::getBlock(int index) {
@@ -31,6 +113,51 @@ Block* Block::getBlock(int index) {
 		exit(-2);
 	}
 	return static_cast<Block*>(data) + index;
+}
+
+void Block::freeData() {
+	if(allocatedData) {
+		switch(fieldInfo->getType()) {
+		case ET_TemplateArray:
+		case ET_Template:
+			delete[] reinterpret_cast<Block*>(data);
+			allocatedData = false;
+			break;
+
+		case ET_Char:
+		case ET_UChar:
+			delete[] reinterpret_cast<char*>(data);
+			allocatedData = false;
+			break;
+
+		case ET_Word:
+			delete[] reinterpret_cast<short*>(data);
+			allocatedData = false;
+			break;
+
+		case ET_DWord:
+			delete[] reinterpret_cast<int*>(data);
+			allocatedData = false;
+			break;
+
+		case ET_Float:
+			delete[] reinterpret_cast<float*>(data);
+			allocatedData = false;
+			break;
+
+		case ET_String:
+			delete[] reinterpret_cast<const char**>(data);
+			allocatedData = false;
+			break;
+
+		case ET_Array:
+		case ET_None:
+			break;
+		}
+
+		if(allocatedData == false)
+			data = nullptr;
+	}
 }
 
 ElementType Block::getType() {

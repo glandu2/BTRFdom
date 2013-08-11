@@ -14,40 +14,43 @@ class Block;
 
 namespace BTRF {
 
-class BTRFFile;
-
 class Block
 {
 public:
-	Block() : numElement(0), data(0) {}
+	Block() : fieldInfo(nullptr), numElement(0), data(nullptr), allocatedData(false) {}
 
 	void setFieldInfo(TML::Block *fieldInfo) { this->fieldInfo = fieldInfo; }
 	void setElementNumber(int num) { numElement = num; }
-	void setData(void *data) { this->data = data; }
 	void setTemplateGuid(TemplateGuid guid) { templateGuid = guid; }
 
 	TML::Block *getFieldInfo() { return fieldInfo; }
 	int getElementNumber() { return numElement; }
-	void* getData() { return data; }
 	TemplateGuid getTemplateGuid() { return templateGuid; }
+
+	//Copy memory
+	void setData(ElementType dataType, int num = 0) { setData(dataType, nullptr, num); }
+	void setData(ElementType dataType, void *data, int num = 0);
+
+	//Use a pointer and don't copy memory (in case of memory mapped file for example)
+	void setDataPtr(ElementType dataType, int num = 0) { setData(dataType, nullptr, num); }
+	void setDataPtr(ElementType dataType, void *data, int num = 0);
+	template<typename T> T getData(int index);
+	template<typename T> T getDataPtr();
+	Block* getBlock(int index);
+
+	void freeData();
 
 	ElementType getType();
 	const char* getName();
 
 	void dumpToStdout();
 
-	template<typename T> T getData(int index);
-	template<typename T> T getDataPtr();
-	Block* getBlock(int index);
-
-
-protected:
-	static ElementType getTypeFromByte(char data);
 
 private:
 	TML::Block *fieldInfo;
 	int numElement;
 	void* data;
+	bool allocatedData;
 	TemplateGuid templateGuid;
 };
 

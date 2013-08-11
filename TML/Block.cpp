@@ -122,16 +122,10 @@ bool Block::parseFile(FILE *file, TMLFile *tmlFile) {
 					subBlock->elementType = ET_Word;
 				} else if(!strcmp(p1, "dword")) {
 					subBlock->elementType = ET_DWord;
-				} else if(!strcmp(p1, "qword")) {
-					subBlock->elementType = ET_QWord;
 				} else if(!strcmp(p1, "float")) {
 					subBlock->elementType = ET_Float;
-				} else if(!strcmp(p1, "double")) {
-					subBlock->elementType = ET_Double;
 				} else if(!strcmp(p1, "string")) {
 					subBlock->elementType = ET_String;
-				} else if(!strcmp(p1, "wstring")) {
-					subBlock->elementType = ET_WString;
 				} else {
 					subBlock->elementType = ET_TemplateArray;
 					subBlock->subfields.push_back(tmlFile->getTemplate(std::string(p1)));
