@@ -1,13 +1,12 @@
-#include "Block.h"
+#include "TmlBlock.h"
+#include "TmlFile.h"
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
 
-namespace TML {
-
-Block::Block()
+TmlBlock::TmlBlock()
 {
 	isValid = false;
 	memset(&guid, 0, sizeof(guid));
@@ -16,9 +15,9 @@ Block::Block()
 	hasVariableSize = false;
 }
 
-Block::~Block() {
-	std::deque<Block*>::iterator it;
-	std::deque<Block*>::const_iterator itEnd = subfields.cend();
+TmlBlock::~TmlBlock() {
+	std::deque<TmlBlock*>::iterator it;
+	std::deque<TmlBlock*>::const_iterator itEnd = subfields.cend();
 
 	for(it = subfields.begin(); it != itEnd;) {
 		delete *it;
@@ -40,7 +39,7 @@ unsigned char strtochar(const char str[2]) {
 	return result;
 }
 
-bool Block::parseFile(FILE *file, TMLFile *tmlFile) {
+bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
 	char line[1024];
 	enum State {
 		S_TemplateName,
@@ -105,7 +104,7 @@ bool Block::parseFile(FILE *file, TMLFile *tmlFile) {
 			if(line[0] == '}') {
 				state = S_End;
 			} else {
-				Block *subBlock = new Block();
+				TmlBlock *subBlock = new TmlBlock();
 				char *p1, *p2;
 
 				p1 = line;
@@ -128,7 +127,7 @@ bool Block::parseFile(FILE *file, TMLFile *tmlFile) {
 					subBlock->elementType = ET_String;
 				} else {
 					subBlock->elementType = ET_TemplateArray;
-					subBlock->subfields.push_back(tmlFile->getTemplate(std::string(p1)));
+					subBlock->subfields.push_back(tmlFile->getTemplate(p1));
 				}
 
 				p1 = p2+1;
@@ -158,8 +157,8 @@ bool Block::parseFile(FILE *file, TMLFile *tmlFile) {
 
 					subBlock->numElement = strtol(p1, &p3, 10);
 					if(subBlock->numElement == 0 || p3 != p2) {
-						std::deque<Block*>::iterator it;
-						std::deque<Block*>::const_iterator itEnd = subfields.cend();
+						std::deque<TmlBlock*>::iterator it;
+						std::deque<TmlBlock*>::const_iterator itEnd = subfields.cend();
 
 						subBlock->numElement = 0;
 						hasVariableSize = true;
@@ -190,5 +189,3 @@ bool Block::parseFile(FILE *file, TMLFile *tmlFile) {
 
 	return true;
 }
-
-} // namespace TML

@@ -1,7 +1,7 @@
-#include "Block.h"
+#include "BtrfBlock.h"
 #include <stdlib.h>
-#include "../TML/Block.h"
-#include "RootBlock.h"
+#include "TmlBlock.h"
+#include "BtrfRootBlock.h"
 
 char *strdup (const char *s) {
 	char *d = (char*)malloc (strlen (s) + 1);   // Space for length plus nul
@@ -11,9 +11,7 @@ char *strdup (const char *s) {
 	return d;                            // Return the new string
 }
 
-namespace BTRF {
-
-void Block::setData(ElementType dataType, void *data, int num) {
+void BtrfBlock::setData(ElementType dataType, void *data, int num) {
 	if(num)
 		numElement = num;
 
@@ -27,7 +25,7 @@ void Block::setData(ElementType dataType, void *data, int num) {
 	switch(dataType) {
 	case ET_TemplateArray:
 	case ET_Template:
-		this->data = new Block[numElement];
+		this->data = new BtrfBlock[numElement];
 		this->allocatedData = true;
 		break;
 
@@ -71,7 +69,7 @@ void Block::setData(ElementType dataType, void *data, int num) {
 	}
 }
 
-void Block::setDataPtr(ElementType dataType, void *data, int num) {
+void BtrfBlock::setDataPtr(ElementType dataType, void *data, int num) {
 	if(num)
 		numElement = num;
 
@@ -82,7 +80,7 @@ void Block::setDataPtr(ElementType dataType, void *data, int num) {
 	switch(dataType) {
 	case ET_TemplateArray:
 	case ET_Template:
-		this->data = new Block[numElement];
+		this->data = new BtrfBlock[numElement];
 		this->allocatedData = true;
 		break;
 
@@ -104,20 +102,20 @@ void Block::setDataPtr(ElementType dataType, void *data, int num) {
 	}
 }
 
-Block* Block::getBlock(int index) {
+BtrfBlock* BtrfBlock::getBlock(int index) {
 	if(index >= numElement) {
 		std::cerr << "Index too large for member " << getName() << " index " << index << " / " << numElement << '\n';
 		exit(-2);
 	}
-	return static_cast<Block*>(data) + index;
+	return static_cast<BtrfBlock*>(data) + index;
 }
 
-void Block::freeData() {
+void BtrfBlock::freeData() {
 	if(allocatedData) {
 		switch(fieldInfo->getType()) {
 		case ET_TemplateArray:
 		case ET_Template:
-			delete[] reinterpret_cast<Block*>(data);
+			delete[] reinterpret_cast<BtrfBlock*>(data);
 			allocatedData = false;
 			break;
 
@@ -157,21 +155,74 @@ void Block::freeData() {
 	}
 }
 
-TemplateGuid Block::getTemplateGuid() {
+TemplateGuid BtrfBlock::getTemplateGuid() {
 	if(templateId != -1)
 		return rootBlock->getTemplateGuid(templateId);
 	else
 		return fieldInfo->getTemplateGuid();
 }
 
-ElementType Block::getType() {
+ElementType BtrfBlock::getType() {
 	return fieldInfo->getType();
 }
-const char* Block::getName() {
-	return fieldInfo->getName().c_str();
+const char* BtrfBlock::getName() {
+	return fieldInfo->getName();
 }
 
-void Block::dumpToStdout() {
+const void * BtrfBlock::getData(int index) {
+	if(allocatedData) {
+		switch(fieldInfo->getType()) {
+		case ET_TemplateArray:
+		case ET_Template:
+			return reinterpret_cast<BtrfBlock*>(data) + index;
+			break;
+
+		case ET_Char:
+		case ET_UChar:
+			return reinterpret_cast<char*>(data) + index;
+			break;
+
+		case ET_Word:
+			return reinterpret_cast<short*>(data) + index;
+			break;
+
+		case ET_DWord:
+			return reinterpret_cast<int*>(data) + index;
+			break;
+
+		case ET_Float:
+			return reinterpret_cast<float*>(data) + index;
+			break;
+
+		case ET_String:
+			if(reinterpret_cast<int*>(data)[index] != -1)
+				return rootBlock->getString(reinterpret_cast<int*>(data)[index]);
+			else return nullptr;
+			break;
+
+		case ET_Array:
+		case ET_None:
+			break;
+		}
+	}
+
+	return nullptr;
+}
+
+template<>
+const char * BtrfBlock::getData<const char*>(int index) {
+   if(index >= numElement) {
+	   std::cerr << "Index too large for data " << getName() << " index " << index << " / " << numElement << '\n';
+	   ::exit(-2);
+   }
+   int id = static_cast<int*>(data)[index];
+   if(id != -1)
+	   return rootBlock->getString(id);
+   else
+	   return nullptr;
+}
+
+void BtrfBlock::dumpToStdout() {
 	int i;
 
 	std::cout << std::resetiosflags((std::ios_base::fmtflags)-1);
@@ -227,7 +278,7 @@ void Block::dumpToStdout() {
 					 (unsigned int)templateGuid.Data4[3] << (unsigned int)templateGuid.Data4[4] << (unsigned int)templateGuid.Data4[5] <<
 					 (unsigned int)templateGuid.Data4[6] << (unsigned int)templateGuid.Data4[7] << std::dec << " " << getName() << ", " << numElement << " subfields\n{\n";
 		for(i=0; i<numElement; i++)
-			static_cast<Block*>(data)[i].dumpToStdout();
+			static_cast<BtrfBlock*>(data)[i].dumpToStdout();
 		std::cout << "}";
 		break;
 	}
@@ -235,7 +286,7 @@ void Block::dumpToStdout() {
 	case ET_TemplateArray:
 		std::cout << "Template array " << getName() << "[" << numElement << "] = \n{\n";
 		for(i=0; i<numElement; i++)
-			static_cast<Block*>(data)[i].dumpToStdout();
+			static_cast<BtrfBlock*>(data)[i].dumpToStdout();
 		std::cout << "}";
 		break;
 
@@ -248,18 +299,3 @@ void Block::dumpToStdout() {
 
 	std::cout << '\n';
 }
-
-template<>
-const char * Block::getData<const char*>(int index) {
-   if(index >= numElement) {
-	   std::cerr << "Index too large for data " << getName() << " index " << index << " / " << numElement << '\n';
-	   ::exit(-2);
-   }
-   int id = static_cast<int*>(data)[index];
-   if(id != -1)
-	   return rootBlock->getString(id);
-   else
-	   return nullptr;
-}
-
-} // namespace DIFK

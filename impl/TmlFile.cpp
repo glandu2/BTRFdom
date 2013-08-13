@@ -1,18 +1,16 @@
-#include "TMLFile.h"
-#include "Block.h"
+#include "TmlFile.h"
+#include "TmlBlock.h"
 #include <iostream>
 #include <stdlib.h>
 
-namespace TML {
-
-TMLFile::TMLFile()
+TmlFile::TmlFile()
 {
 	//ctor
 }
 
-TMLFile::~TMLFile() {
-	std::unordered_map<TemplateGuid, Block*>::iterator it;
-	std::unordered_map<TemplateGuid, Block*>::const_iterator itEnd;
+TmlFile::~TmlFile() {
+	std::unordered_map<TemplateGuid, TmlBlock*>::iterator it;
+	std::unordered_map<TemplateGuid, TmlBlock*>::const_iterator itEnd;
 
 	for(it = templatesByGuid.begin(), itEnd = templatesByGuid.cend(); it != itEnd; ++it) {
 		delete it->second;
@@ -22,7 +20,7 @@ TMLFile::~TMLFile() {
 	templatesByName.clear();
 }
 
-Block* TMLFile::getTemplate(const TemplateGuid& guid) {
+TmlBlock* TmlFile::getTemplate(const TemplateGuid& guid) {
 	try {
 		return templatesByGuid.at(guid);
 	} catch(...) {
@@ -35,25 +33,34 @@ Block* TMLFile::getTemplate(const TemplateGuid& guid) {
 	}
 }
 
-Block* TMLFile::getTemplate(const std::string& name) {
+TmlBlock* TmlFile::getTemplate(const char *name) {
 	try {
-		return templatesByName.at(name);
+		return templatesByName.at(std::string(name));
 	} catch(...) {
 		std::cerr << "Missing template definition, .tml file is missing ?, field name = " << name << '\n';
 		abort();
 	}
 }
 
-void TMLFile::parseFile(FILE *file) {
-	Block *block;
+bool TmlFile::parseFile(const char *file) {
+	TmlBlock *block;
+	FILE* tml_file;
 
-	while((block = new Block) != nullptr && block->parseFile(file, this)) {
+	tml_file = fopen(file, "rb");
+	if(!tml_file) {
+		fprintf(stderr, "Warning: cannot open template file %s\n", file);
+		return false;
 	}
+
+	while((block = new TmlBlock) != nullptr && block->parseFile(tml_file, this)) {}
+
+	fclose(tml_file);
+
+	return true;
 }
 
-void TMLFile::addTemplate(Block *block) {
-	templatesByGuid.insert(std::pair<TemplateGuid, Block*>(block->getTemplateGuid(), block));
-	templatesByName.insert(std::pair<std::string, Block*>(block->getName(), block));
+void TmlFile::addTemplate(ITmlBlock *iBlock) {
+	TmlBlock *block = static_cast<TmlBlock*>(iBlock);
+	templatesByGuid.insert(std::pair<TemplateGuid, TmlBlock*>(block->getTemplateGuid(), block));
+	templatesByName.insert(std::pair<std::string, TmlBlock*>(block->getName(), block));
 }
-
-} // namespace TML

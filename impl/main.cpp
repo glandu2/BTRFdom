@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "BTRF/Parser.h"
-#include "BTRF/RootBlock.h"
-#include "BTRF/Block.h"
-#include "TML/TMLFile.h"
+#include "BtrfParser.h"
+#include "BtrfRootBlock.h"
+#include "BtrfBlock.h"
+#include "TmlFile.h"
 #include <windows.h>
 #include <assert.h>
 
@@ -12,9 +12,6 @@
 #include <list>
 #include <deque>
 #include <string>
-
-using namespace BTRF;
-using namespace TML;
 
 void inverse4x4(const float a[][4], float b[][4])
 {
@@ -769,7 +766,7 @@ void writeCollada(const Model& model, FILE* file) {
 		"</COLLADA>\n");
 }
 
-void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
+void parseFunc(BtrfRootBlock* rootBlock, BtrfRootBlock* animRootBlock, FILE* file) {
 
 	GUID nx3_mtl_header_guid = {0x209BBB41, 0x681F, 0x4b9b, {0x97, 0x44, 0x4D, 0x88, 0xE1, 0x41, 0x3D, 0xCC}};
 	GUID nx3_new_mesh_header = {0xA6D25AEB, 0xA735, 0x1FEF, {0xC1, 0x7D, 0xEE, 0x21, 0x17, 0x49, 0x82, 0x26}};
@@ -781,7 +778,7 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 	Geometry geometry;
 	Mesh mesh;
 
-	BTRF::Block *currentBlock;
+	BtrfBlock *currentBlock;
 
 	currentBlock = rootBlock->getBlock(nx3_mtl_header_guid);
 	if(currentBlock) {
@@ -790,7 +787,7 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 
 		int i;
 		for(i = 0; i < currentBlock->getElementNumber(); i++) {
-			BTRF::Block *materialInfo = currentBlock->getBlock(i);
+			BtrfBlock *materialInfo = currentBlock->getBlock(i);
 
 			material.mtl_name =     materialInfo->getBlock(0)->getData<const char*>(0);
 			material.texture_name = materialInfo->getBlock(1)->getData<const char*>(0);
@@ -808,12 +805,12 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 	if(currentBlock == 0)
 		currentBlock = rootBlock->getBlock(nx3_mesh_header);
 	if(currentBlock) {
-		BTRF::Block *subBlock = currentBlock->getBlock(0);
+		BtrfBlock *subBlock = currentBlock->getBlock(0);
 
 		int i;
 		for(i = 0; i < subBlock->getElementNumber(); i++) {
-			BTRF::Block *geometryInfo = subBlock->getBlock(i);
-			BTRF::Block *meshInfo;
+			BtrfBlock *geometryInfo = subBlock->getBlock(i);
+			BtrfBlock *meshInfo;
 
 			geometry.mesh_name = geometryInfo->getBlock(0)->getData<const char*>(0);
 			geometry.material_id = geometryInfo->getBlock(1)->getData<int>(0);
@@ -821,8 +818,8 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 
 			meshInfo = geometryInfo->getBlock(3);
 			for(int j = 0; j < meshInfo->getElementNumber(); j++) {
-				BTRF::Block *meshBlock = meshInfo->getBlock(j);
-				BTRF::Block *meshData = meshBlock->getBlock(1)->getBlock(0);
+				BtrfBlock *meshBlock = meshInfo->getBlock(j);
+				BtrfBlock *meshData = meshBlock->getBlock(1)->getBlock(0);
 
 				mesh.textureId = meshBlock->getBlock(0)->getData<int>(0);
 				mesh.vertexCount = meshData->getBlock(1)->getElementNumber()/3;
@@ -834,7 +831,7 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 				mesh.indexCount = meshBlock->getBlock(2)->getElementNumber();
 				mesh.index_array = meshBlock->getBlock(2)->getDataPtr<short*>();
 
-				BTRF::Block *boneInfo = meshData->getBlock(5);
+				BtrfBlock *boneInfo = meshData->getBlock(5);
 
 				mesh.boneVerticesAssociation.clear();
 				mesh.boneVerticesAssociation.resize(mesh.vertexCount);
@@ -871,7 +868,7 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 		//Bones matrix
 		subBlock = currentBlock->getBlock(1);
 		for(i = 0; i < subBlock->getElementNumber(); i++) {
-			BTRF::Block *boneBlock = subBlock->getBlock(i);
+			BtrfBlock *boneBlock = subBlock->getBlock(i);
 
 			model.boneTransformMatrix[i].name = boneBlock->getBlock(0)->getData<const char*>(0);
 			model.boneTransformMatrix[i].transformMatrix = boneBlock->getBlock(1)->getDataPtr<float*>();
@@ -881,15 +878,15 @@ void parseFunc(RootBlock* rootBlock, RootBlock* animRootBlock, FILE* file) {
 /*
 	currentBlock = animRootBlock->getBlock(nx3_bone_ani_header);
 	if(currentBlock) {
-		BTRF::Block *subBlock = currentBlock->getBlock(1);
+		BtrfBlock *subBlock = currentBlock->getBlock(1);
 
 		int i;
 		for(i = 0; i < subBlock->getElementNumber(); i++) {
-			BTRF::Block *channelBlock = subBlock->getBlock(i);
+			BtrfBlock *channelBlock = subBlock->getBlock(i);
 			AnimationChannel animationModel;
 
 			for(int j = 0; j < channelBlock->getBlock(4)->getElementNumber(); j++) {
-				BTRF::Block *boneBlock = channelBlock->getBlock(4)->getBlock(j);
+				BtrfBlock *boneBlock = channelBlock->getBlock(4)->getBlock(j);
 				BoneAnimation boneAnim;
 
 				boneAnim.boneName = boneBlock->getBlock(0)->getData<const char*>(0);
@@ -922,14 +919,14 @@ int main(int argc, char* argv[])
 	FILE* tml_file;
 	FILE* outfile;
 
-	TMLFile *tmlFile;
-	RootBlock *rootBlock;
-	RootBlock *animRootBlock = 0;
+	TmlFile *tmlFile;
+	BtrfRootBlock *rootBlock;
+	BtrfRootBlock *animRootBlock = 0;
 	int i;
 
 	std::deque<const char*> templateFiles;
 	std::deque<const char*> inputFiles;
-	std::deque<RootBlock*> rootBlocks;
+	std::deque<BtrfRootBlock*> rootBlocks;
 	const char* outFile = 0;
 	const char* outBtrfFile = 0;
 	bool dumpData = false;
@@ -958,7 +955,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	tmlFile = new TMLFile;
+	tmlFile = new TmlFile;
 
 	if(templateFiles.size() == 0) {
 		templateFiles.push_back("nx3.tml");
@@ -966,19 +963,13 @@ int main(int argc, char* argv[])
 	}
 
 	for(i = 0; i < templateFiles.size(); i++) {
-		tml_file = fopen(templateFiles.at(i), "rb");
-		if(!tml_file) {
-			fprintf(stderr, "Warning: cannot open template file %s\n", templateFiles.at(i));
-			continue;
-		}
-		tmlFile->parseFile(tml_file);
-		fclose(tml_file);
+		tmlFile->parseFile(templateFiles.at(i));
 	}
 
-	Parser *parser = new Parser(tmlFile);
+	BtrfParser *parser = new BtrfParser(tmlFile);
 
 	for(i = 0; i < inputFiles.size(); i++) {
-		rootBlock = parser->parse(inputFiles.at(i));
+		rootBlock = parser->readFile(inputFiles.at(i));
 		if(!rootBlock) {
 			fprintf(stderr, "Warning: cannot open input file %s\n", inputFiles.at(i));
 			continue;
