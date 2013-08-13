@@ -35,6 +35,8 @@ public:
 	virtual IBtrfBlock * DLLCALLCONV getBlock(TemplateGuid guid) = 0;
 	virtual IBtrfBlock * DLLCALLCONV getBlock(int id) = 0;
 	virtual int DLLCALLCONV getBlockNum() = 0;
+
+	virtual void DLLCALLCONV dumpToStdout() = 0;
 };
 
 #ifdef __cplusplus

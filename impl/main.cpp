@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "BtrfParser.h"
-#include "BtrfRootBlock.h"
-#include "BtrfBlock.h"
-#include "TmlFile.h"
+#include "IBtrfParser.h"
+#include "IBtrfRootBlock.h"
+#include "IBtrfBlock.h"
+#include "ITmlFile.h"
 #include <windows.h>
 #include <assert.h>
 
@@ -12,6 +12,7 @@
 #include <list>
 #include <deque>
 #include <string>
+#include <vector>
 
 void inverse4x4(const float a[][4], float b[][4])
 {
@@ -766,7 +767,7 @@ void writeCollada(const Model& model, FILE* file) {
 		"</COLLADA>\n");
 }
 
-void parseFunc(BtrfRootBlock* rootBlock, BtrfRootBlock* animRootBlock, FILE* file) {
+void parseFunc(IBtrfRootBlock* rootBlock, IBtrfRootBlock* animRootBlock, FILE* file) {
 
 	GUID nx3_mtl_header_guid = {0x209BBB41, 0x681F, 0x4b9b, {0x97, 0x44, 0x4D, 0x88, 0xE1, 0x41, 0x3D, 0xCC}};
 	GUID nx3_new_mesh_header = {0xA6D25AEB, 0xA735, 0x1FEF, {0xC1, 0x7D, 0xEE, 0x21, 0x17, 0x49, 0x82, 0x26}};
@@ -778,7 +779,7 @@ void parseFunc(BtrfRootBlock* rootBlock, BtrfRootBlock* animRootBlock, FILE* fil
 	Geometry geometry;
 	Mesh mesh;
 
-	BtrfBlock *currentBlock;
+	IBtrfBlock *currentBlock;
 
 	currentBlock = rootBlock->getBlock(nx3_mtl_header_guid);
 	if(currentBlock) {
@@ -787,16 +788,16 @@ void parseFunc(BtrfRootBlock* rootBlock, BtrfRootBlock* animRootBlock, FILE* fil
 
 		int i;
 		for(i = 0; i < currentBlock->getElementNumber(); i++) {
-			BtrfBlock *materialInfo = currentBlock->getBlock(i);
+			IBtrfBlock *materialInfo = currentBlock->getBlock(i);
 
-			material.mtl_name =     materialInfo->getBlock(0)->getData<const char*>(0);
-			material.texture_name = materialInfo->getBlock(1)->getData<const char*>(0);
-			material.mtl_id =       materialInfo->getBlock(2)->getData<int>(0);
-			material.power =        materialInfo->getBlock(4)->getData<float>(0);
-			material.self_illumi =  materialInfo->getBlock(5)->getData<float>(0);
-			material.ambient =      materialInfo->getBlock(7)->getData<int>(0);
-			material.diffuse =      materialInfo->getBlock(8)->getData<int>(0);
-			material.specular =     materialInfo->getBlock(9)->getData<int>(0);
+			material.mtl_name =     materialInfo->getBlock(0)->getDataString(0);
+			material.texture_name = materialInfo->getBlock(1)->getDataString(0);
+			material.mtl_id =       materialInfo->getBlock(2)->getDataInt(0);
+			material.power =        materialInfo->getBlock(4)->getDataFloat(0);
+			material.self_illumi =  materialInfo->getBlock(5)->getDataFloat(0);
+			material.ambient =      materialInfo->getBlock(7)->getDataInt(0);
+			material.diffuse =      materialInfo->getBlock(8)->getDataInt(0);
+			material.specular =     materialInfo->getBlock(9)->getDataInt(0);
 			model.materials.push_back(material);
 		}
 	}
@@ -805,33 +806,33 @@ void parseFunc(BtrfRootBlock* rootBlock, BtrfRootBlock* animRootBlock, FILE* fil
 	if(currentBlock == 0)
 		currentBlock = rootBlock->getBlock(nx3_mesh_header);
 	if(currentBlock) {
-		BtrfBlock *subBlock = currentBlock->getBlock(0);
+		IBtrfBlock *subBlock = currentBlock->getBlock(0);
 
 		int i;
 		for(i = 0; i < subBlock->getElementNumber(); i++) {
-			BtrfBlock *geometryInfo = subBlock->getBlock(i);
-			BtrfBlock *meshInfo;
+			IBtrfBlock *geometryInfo = subBlock->getBlock(i);
+			IBtrfBlock *meshInfo;
 
-			geometry.mesh_name = geometryInfo->getBlock(0)->getData<const char*>(0);
-			geometry.material_id = geometryInfo->getBlock(1)->getData<int>(0);
-			geometry.channel_id = geometryInfo->getBlock(2)->getData<int>(0);
+			geometry.mesh_name = geometryInfo->getBlock(0)->getDataString(0);
+			geometry.material_id = geometryInfo->getBlock(1)->getDataInt(0);
+			geometry.channel_id = geometryInfo->getBlock(2)->getDataInt(0);
 
 			meshInfo = geometryInfo->getBlock(3);
 			for(int j = 0; j < meshInfo->getElementNumber(); j++) {
-				BtrfBlock *meshBlock = meshInfo->getBlock(j);
-				BtrfBlock *meshData = meshBlock->getBlock(1)->getBlock(0);
+				IBtrfBlock *meshBlock = meshInfo->getBlock(j);
+				IBtrfBlock *meshData = meshBlock->getBlock(1)->getBlock(0);
 
-				mesh.textureId = meshBlock->getBlock(0)->getData<int>(0);
+				mesh.textureId = meshBlock->getBlock(0)->getDataInt(0);
 				mesh.vertexCount = meshData->getBlock(1)->getElementNumber()/3;
-				mesh.vertex_array = meshData->getBlock(1)->getDataPtr<Vector3D*>();
+				mesh.vertex_array = (Vector3D*)meshData->getBlock(1)->getDataFloatPtr();
 				mesh.normalCount = meshData->getBlock(2)->getElementNumber()/3;
-				mesh.normal_array = meshData->getBlock(2)->getDataPtr<Vector3D*>();
+				mesh.normal_array = (Vector3D*)meshData->getBlock(2)->getDataFloatPtr();
 				mesh.texelCount = meshData->getBlock(3)->getElementNumber()/2;
-				mesh.texel_array = meshData->getBlock(3)->getDataPtr<Vector2D*>();
+				mesh.texel_array = (Vector2D*)meshData->getBlock(3)->getDataFloatPtr();
 				mesh.indexCount = meshBlock->getBlock(2)->getElementNumber();
-				mesh.index_array = meshBlock->getBlock(2)->getDataPtr<short*>();
+				mesh.index_array = meshBlock->getBlock(2)->getDataShortPtr();
 
-				BtrfBlock *boneInfo = meshData->getBlock(5);
+				IBtrfBlock *boneInfo = meshData->getBlock(5);
 
 				mesh.boneVerticesAssociation.clear();
 				mesh.boneVerticesAssociation.resize(mesh.vertexCount);
@@ -841,10 +842,10 @@ void parseFunc(BtrfRootBlock* rootBlock, BtrfRootBlock* animRootBlock, FILE* fil
 				for(k = 0; k < boneInfo->getElementNumber(); k++) {
 					Bone& bone = mesh.boneVertices[k];
 
-					bone.name = boneInfo->getBlock(k)->getBlock(0)->getData<const char*>(0);
+					bone.name = boneInfo->getBlock(k)->getBlock(0)->getDataString(0);
 					bone.verticeCount = boneInfo->getBlock(k)->getBlock(1)->getElementNumber()/2;
-					bone.boneVertex = boneInfo->getBlock(k)->getBlock(1)->getDataPtr<Bone::VertexInfluence*>();
-					bone.vertexOffset = boneInfo->getBlock(k)->getBlock(2)->getDataPtr<Vector3D*>();
+					bone.boneVertex = (Bone::VertexInfluence*)boneInfo->getBlock(k)->getBlock(1)->getDataFloatPtr();
+					bone.vertexOffset = (Vector3D*)boneInfo->getBlock(k)->getBlock(2)->getDataFloatPtr();
 
 					for(int l = 0; l < bone.verticeCount; ++l) {
 						VertexBoneAssociation assoc;
@@ -857,7 +858,7 @@ void parseFunc(BtrfRootBlock* rootBlock, BtrfRootBlock* animRootBlock, FILE* fil
 				}
 				model.boneTransformMatrix.resize(std::max(k, (int)model.boneTransformMatrix.size()));
 
-				mesh.transformMatrix = meshData->getBlock(6)->getDataPtr<float*>();
+				mesh.transformMatrix = meshData->getBlock(6)->getDataFloatPtr();
 
 				geometry.meshes.push_back(mesh);
 			}
@@ -868,10 +869,10 @@ void parseFunc(BtrfRootBlock* rootBlock, BtrfRootBlock* animRootBlock, FILE* fil
 		//Bones matrix
 		subBlock = currentBlock->getBlock(1);
 		for(i = 0; i < subBlock->getElementNumber(); i++) {
-			BtrfBlock *boneBlock = subBlock->getBlock(i);
+			IBtrfBlock *boneBlock = subBlock->getBlock(i);
 
-			model.boneTransformMatrix[i].name = boneBlock->getBlock(0)->getData<const char*>(0);
-			model.boneTransformMatrix[i].transformMatrix = boneBlock->getBlock(1)->getDataPtr<float*>();
+			model.boneTransformMatrix[i].name = boneBlock->getBlock(0)->getDataString(0);
+			model.boneTransformMatrix[i].transformMatrix = boneBlock->getBlock(1)->getDataFloatPtr();
 		}
 	}
 
@@ -919,14 +920,13 @@ int main(int argc, char* argv[])
 	FILE* tml_file;
 	FILE* outfile;
 
-	TmlFile *tmlFile;
-	BtrfRootBlock *rootBlock;
-	BtrfRootBlock *animRootBlock = 0;
+	ITmlFile *tmlFile;
+	IBtrfRootBlock *rootBlock;
 	int i;
 
 	std::deque<const char*> templateFiles;
 	std::deque<const char*> inputFiles;
-	std::deque<BtrfRootBlock*> rootBlocks;
+	std::deque<IBtrfRootBlock*> rootBlocks;
 	const char* outFile = 0;
 	const char* outBtrfFile = 0;
 	bool dumpData = false;
@@ -955,7 +955,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	tmlFile = new TmlFile;
+	tmlFile = createTmlFile();
 
 	if(templateFiles.size() == 0) {
 		templateFiles.push_back("nx3.tml");
@@ -966,7 +966,7 @@ int main(int argc, char* argv[])
 		tmlFile->parseFile(templateFiles.at(i));
 	}
 
-	BtrfParser *parser = new BtrfParser(tmlFile);
+	IBtrfParser *parser = createBtrfParser(tmlFile);
 
 	for(i = 0; i < inputFiles.size(); i++) {
 		rootBlock = parser->readFile(inputFiles.at(i));

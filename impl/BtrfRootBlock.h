@@ -34,9 +34,7 @@ public:
 	virtual BtrfBlock * DLLCALLCONV getBlock(int id) { return blockList.at(id); }
 	virtual int DLLCALLCONV getBlockNum() { return blockList.size(); }
 
-public:
-
-	void dumpToStdout();
+	virtual void DLLCALLCONV dumpToStdout();
 
 protected:
 private:
