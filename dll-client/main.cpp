@@ -1,3 +1,23 @@
+/*
+ * BTRFdom - Rappelz BTRF Document Object Model
+ * By Glandu2
+ * Copyright 2013 Glandu2
+ *
+ * This file is part of BTRFdom.
+ * BTRFdom is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BTRFdom is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BTRFdom.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "IBtrfParser.h"
@@ -186,7 +206,7 @@ void writeCollada(const Model& model, FILE* file) {
 	std::list<Bone>::const_iterator boneIt, boneEnd;
 	std::list<AnimationChannel>::const_iterator animChannelIt, animChannelEnd;
 	std::list<BoneAnimation>::const_iterator boneAnimIt, boneAnimEnd;
-	int index;
+	unsigned int index;
 
 	float scaleY = 1;
 
@@ -464,7 +484,7 @@ void writeCollada(const Model& model, FILE* file) {
 				"        <source id=\"invmat-%s-%d\">\n"
 				"          <float_array id=\"invmata-%s-%d\" count=\"%d\"> ", geometry.mesh_name, index, geometry.mesh_name, index, model.boneTransformMatrix.size()*16);
 
-			for(int i = 0; i < model.boneTransformMatrix.size(); i++) {
+			for(unsigned int i = 0; i < model.boneTransformMatrix.size(); i++) {
 
 /*				float invMat[16];
 
@@ -738,7 +758,7 @@ void writeCollada(const Model& model, FILE* file) {
 				"        <instance_controller url=\"#skin-%s-%d\">\n", geometry.mesh_name, index, geometry.mesh_name, index, geometry.mesh_name, index);
 
 
-			for(int i = 0; i < model.boneTransformMatrix.size(); i++) {
+			for(unsigned int i = 0; i < model.boneTransformMatrix.size(); i++) {
 				fprintf(file, "          <skeleton>#%s</skeleton>\n",  model.boneTransformMatrix.at(i).name);
 			}
 
@@ -772,7 +792,7 @@ void parseFunc(IBtrfRootBlock* rootBlock, IBtrfRootBlock* animRootBlock, FILE* f
 	GUID nx3_mtl_header_guid = {0x209BBB41, 0x681F, 0x4b9b, {0x97, 0x44, 0x4D, 0x88, 0xE1, 0x41, 0x3D, 0xCC}};
 	GUID nx3_new_mesh_header = {0xA6D25AEB, 0xA735, 0x1FEF, {0xC1, 0x7D, 0xEE, 0x21, 0x17, 0x49, 0x82, 0x26}};
 	GUID nx3_mesh_header =     {0xD6D25AEB, 0xA735, 0x4fef, {0xA1, 0x7D, 0x6E, 0x21, 0x17, 0x49, 0x82, 0x26}};
-	GUID nx3_bone_ani_header = {0xE8F9296B, 0xB9DD, 0x4080, {0x8B, 0xC7, 0x6C, 0x69, 0xE0, 0xAA, 0x3F, 0xEB}};
+//	GUID nx3_bone_ani_header = {0xE8F9296B, 0xB9DD, 0x4080, {0x8B, 0xC7, 0x6C, 0x69, 0xE0, 0xAA, 0x3F, 0xEB}};
 
 	Model model;
 	Material material;
@@ -917,12 +937,10 @@ void help();
 
 int main(int argc, char* argv[])
 {
-	FILE* tml_file;
 	FILE* outfile;
 
 	ITmlFile *tmlFile;
 	IBtrfRootBlock *rootBlock;
-	int i;
 
 	std::deque<const char*> templateFiles;
 	std::deque<const char*> inputFiles;
@@ -935,7 +953,7 @@ int main(int argc, char* argv[])
 		help();
 
 
-	for(i = 1; i < argc; i++) {
+	for(int i = 1; i < argc; i++) {
 		if(!strcmp(argv[i], "--input") && (i+1) < argc) {
 			inputFiles.push_back(argv[i+1]);
 			i++;
@@ -962,13 +980,13 @@ int main(int argc, char* argv[])
 		templateFiles.push_back("nobj.tml");
 	}
 
-	for(i = 0; i < templateFiles.size(); i++) {
+	for(unsigned int i = 0; i < templateFiles.size(); i++) {
 		tmlFile->parseFile(templateFiles.at(i));
 	}
 
 	IBtrfParser *parser = createBtrfParser(tmlFile);
 
-	for(i = 0; i < inputFiles.size(); i++) {
+	for(unsigned int i = 0; i < inputFiles.size(); i++) {
 		rootBlock = parser->readFile(inputFiles.at(i));
 		if(!rootBlock) {
 			fprintf(stderr, "Warning: cannot open input file %s\n", inputFiles.at(i));
@@ -978,7 +996,7 @@ int main(int argc, char* argv[])
 	}
 
 	if(dumpData) {
-		for(i = 0; i < rootBlocks.size(); i++) {
+		for(unsigned int i = 0; i < rootBlocks.size(); i++) {
 			rootBlocks.at(i)->dumpToStdout();
 		}
 	}
@@ -1003,12 +1021,14 @@ void help() {
 		   "Usage: BTRFReader.exe --input <input_file> [--input <input_file> ...]\n"
 		   "           [--template <template_file.tml> [--template <template_file.tml> ...]]\n"
 		   "           [--output <output_file.dae>] [--dump]\n"
+		   "           [--output-btrf <output_btrf_file.nx3>]\n"
 		   "\n"
 		   "--input       Specify which input files to read. These files are usually\n"
 		   "                  *.cob, *.nx3, *.naf\n"
 		   "--template    Specify custom template files. When not specified,\n"
 		   "                  default are used (nx3.tml & nobj.tml)\n"
 		   "--ouput       The output collada file. The first input file MUST be a .nx3 file\n"
+		   "--output-btrf Output a BTRF file. Only the first input file is used\n"
 		   "--dump        Dump the contents of the files to stdout\n"
 		   "                  (ie: to the console when not redirected)\n"
 		   "\n"
