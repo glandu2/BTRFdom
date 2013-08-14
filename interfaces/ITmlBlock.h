@@ -33,7 +33,7 @@ class ITmlBlock : public CImplement<IObject>
 {
 public:
 	virtual bool DLLCALLCONV getIsValid() = 0;
-	virtual const TemplateGuid& DLLCALLCONV getTemplateGuid() = 0;
+	virtual TemplateGuid DLLCALLCONV getTemplateGuid() = 0;
 	virtual const char* DLLCALLCONV getName() = 0;
 	virtual ITmlBlock* DLLCALLCONV getField(int i) = 0;
 	virtual int DLLCALLCONV getFieldCount() = 0;
