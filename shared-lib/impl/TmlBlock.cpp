@@ -21,7 +21,7 @@
 #include "TmlBlock.h"
 #include "TmlFile.h"
 #include <stdlib.h>
-#include <strings.h>
+//#include <string>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
@@ -92,9 +92,9 @@ bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
 
 		case S_TemplateGuid:
 			if(line[0] == '{' && isalnum(line[1])) {
-				guid.Data1 = strtoll(line + 1, NULL, 16);
-				guid.Data2 = strtol(line + 10, NULL, 16);
-				guid.Data3 = strtol(line + 15, NULL, 16);
+				guid.Data1 = strtoul(line + 1, NULL, 16);
+				guid.Data2 = (unsigned short) strtoul(line + 10, NULL, 16);
+				guid.Data3 = (unsigned short) strtoul(line + 15, NULL, 16);
 				guid.Data4[0] = strtochar(line + 20);
 				guid.Data4[1] = strtochar(line + 22);
 				guid.Data4[2] = strtochar(line + 25);

@@ -3,9 +3,9 @@
 debug/
 release/
 x64/
-build/
-bin/
-obj/
+build*/
+bin*/
+obj*/
 
 *.ilk
 *.exe
@@ -13,7 +13,13 @@ obj/
 *.o
 *.pdb
 *.user*
+*.so*
 CMakeLists.txt.*
+
+#Temp files
+*~
+*.bak
+*.tmp
 
 #############
 ## Windows detritus

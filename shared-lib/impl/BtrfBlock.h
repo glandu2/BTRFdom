@@ -50,7 +50,7 @@ public:
 	virtual TmlBlock * DLLCALLCONV getFieldInfo() { return fieldInfo; }
 	virtual int DLLCALLCONV getElementNumber() { return numElement; }
 	virtual int DLLCALLCONV getTemplateId() { return templateId; }
-	virtual TemplateGuid DLLCALLCONV getTemplateGuid();
+	virtual const TemplateGuid& DLLCALLCONV getTemplateGuid();
 
 	//Copy memory
 	//String take a array of index to strings (int [])

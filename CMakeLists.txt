@@ -1,27 +1,38 @@
-project(BTRFdom)
 cmake_minimum_required(VERSION 2.8)
+project(BTRFdom)
 
-set(CMAKE_VERBOSE_MAKEFILE false)
+set(CMAKE_VERBOSE_MAKEFILE true)
+set(CMAKE_SHARED_LIBRARY_PREFIX "")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -static-libgcc -static-libstdc++ -Wl,--kill-at")
+set(SHARED_LIB_DIR shared-lib)
+set(DLLCLIENT_CPP_LIB_DIR "dll-client-cpp")
 
-#for qtcreator
-add_definitions("-D__GXX_EXPERIMENTAL_CXX0X__ -DBUILDING_BTRF")
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_LIST_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_LIST_DIR}/bin)
 
-include_directories("${CMAKE_SOURCE_DIR}/impl")
-include_directories("${CMAKE_SOURCE_DIR}/common")
-include_directories("${CMAKE_SOURCE_DIR}/interfaces")
+set(SHARED_LIB_PATH "${CMAKE_CURRENT_LIST_DIR}/${SHARED_LIB_DIR}")
+set(DLLCLIENT_CPP_LIB_PATH "${CMAKE_CURRENT_LIST_DIR}/${DLLCLIENT_CPP_LIB_DIR}")
 
-file(GLOB_RECURSE IMPL_SRC_LIST "${CMAKE_SOURCE_DIR}/impl/*.cpp" "${CMAKE_SOURCE_DIR}/impl/*.h")
-file(GLOB_RECURSE COMMON_SRC_LIST "${CMAKE_SOURCE_DIR}/common/*.cpp" "${CMAKE_SOURCE_DIR}/common/*.h")
-file(GLOB_RECURSE INTERFACES_SRC_LIST "${CMAKE_SOURCE_DIR}/interfaces/*.cpp" "${CMAKE_SOURCE_DIR}/interfaces/*.h")
+set(SHARED_LIB_NAME "${PROJECT_NAME}")
+set(DLLCLIENT_CPP_NAME "BTRFReader")
 
-add_library(${PROJECT_NAME} SHARED ${IMPL_SRC_LIST} ${COMMON_SRC_LIST} ${INTERFACES_SRC_LIST})
+include_directories("${SHARED_LIB_PATH}/impl")
+include_directories("${SHARED_LIB_PATH}/common")
+include_directories("${SHARED_LIB_PATH}/interfaces")
 
+if(MINGW)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -static-libgcc -static-libstdc++")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++ -Wl,--add-stdcall-alias")
 
+  #for qtcreator
+  add_definitions("-D__GXX_EXPERIMENTAL_CXX0X__")
+else()
+  set(CMAKE_EXE_LINKER_FLAGS "/MANIFEST:NO /INCREMENTAL:NO")
+  set(CMAKE_MODULE_LINKER_FLAGS "/MANIFEST:NO /INCREMENTAL:NO")
+  set(CMAKE_SHARED_LINKER_FLAGS "/MANIFEST:NO /INCREMENTAL:NO")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11 -Wall -static-libgcc -static-libstdc++")
+  add_definitions("-D_CRT_SECURE_NO_WARNINGS")
+endif()
 
-file(GLOB_RECURSE DLLCLIENT_SRC_LIST "${CMAKE_SOURCE_DIR}/dll-client/*.cpp" "${CMAKE_SOURCE_DIR}/dll-client/*.h")
-add_executable(BTRFReader ${DLLCLIENT_SRC_LIST})
-target_link_libraries(BTRFReader ${PROJECT_NAME})
+add_subdirectory("${SHARED_LIB_PATH}" ${SHARED_LIB_DIR})
+add_subdirectory("${DLLCLIENT_CPP_LIB_PATH}" ${DLLCLIENT_CPP_LIB_DIR})

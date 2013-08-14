@@ -29,6 +29,11 @@
 #include "TmlFile.h"
 #include "BtrfBlock.h"
 
+struct TemplateInfo {
+	TemplateGuid guid;
+	int usedFieldsNum;
+};
+
 class BtrfRootBlock : public IBtrfRootBlock
 {
 public:
@@ -41,8 +46,8 @@ public:
 	virtual void DLLCALLCONV addString(const char* str);
 	virtual const char * DLLCALLCONV getString(int index);
 
-	virtual void DLLCALLCONV addTemplate(TemplateGuid guid, int usedField);
-	virtual TemplateGuid DLLCALLCONV getTemplateGuid(int index);
+	virtual void DLLCALLCONV addTemplate(const TemplateGuid& guid, int usedField);
+	virtual const TemplateGuid& DLLCALLCONV getTemplateGuid(int index);
 	virtual int DLLCALLCONV getTemplateUsedField(int index);
 	virtual int DLLCALLCONV getStringNum() { return stringList.size(); }
 	virtual int DLLCALLCONV getTemplateNum() { return templateList.size(); }
@@ -50,7 +55,7 @@ public:
 	virtual TmlFile * DLLCALLCONV getTmlFile() { return tmlFile; }
 
 	virtual void DLLCALLCONV addBlock(IBtrfBlock *block);
-	virtual BtrfBlock * DLLCALLCONV getBlock(TemplateGuid guid) { try {return blocks.find(guid)->second; } catch(...) { return 0; } }
+	virtual BtrfBlock * DLLCALLCONV getBlock(const TemplateGuid& guid) { try {return blocks.find(guid)->second; } catch(...) { return 0; } }
 	virtual BtrfBlock * DLLCALLCONV getBlock(int id) { return blockList.at(id); }
 	virtual int DLLCALLCONV getBlockNum() { return blockList.size(); }
 

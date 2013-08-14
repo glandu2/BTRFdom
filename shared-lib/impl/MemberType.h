@@ -24,12 +24,8 @@
 #include <string.h>
 #include <functional>
 
-#ifndef __unix__
-#include <windows.h>
-#else
 #include "Guid.h"
-#define GUID Guid
-#endif
+
 /*
 enum ElementType {
 	ET_None = 0x0,
@@ -89,7 +85,7 @@ union TemplateGuid {
 			rawData[i] = 0;
 	}
 
-	TemplateGuid(GUID guid) {
+	TemplateGuid(const Guid& guid) {
 		int i;
 		Data1 = guid.Data1;
 		Data2 = guid.Data2;

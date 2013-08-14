@@ -39,12 +39,12 @@ const char *BtrfRootBlock::getString(int index) {
 	return stringList.at(index).c_str();
 }
 
-void BtrfRootBlock::addTemplate(TemplateGuid guid, int usedField) {
+void BtrfRootBlock::addTemplate(const TemplateGuid& guid, int usedField) {
 	TemplateInfo templateInfo = {guid, usedField};
 	templateList.push_back(templateInfo);
 }
 
-TemplateGuid BtrfRootBlock::getTemplateGuid(int index) {
+const TemplateGuid& BtrfRootBlock::getTemplateGuid(int index) {
 	return templateList.at(index).guid;
 }
 

@@ -39,7 +39,7 @@ public:
 	COM_END_DECLARE_IFACE
 
 	virtual bool DLLCALLCONV getIsValid() { return isValid; }
-	virtual TemplateGuid DLLCALLCONV getTemplateGuid() { return guid; }
+	virtual const TemplateGuid& DLLCALLCONV getTemplateGuid() { return guid; }
 	virtual const char* DLLCALLCONV getName() { return name.c_str(); }
 	virtual TmlBlock* DLLCALLCONV getField(int i) { return subfields.at(i); }
 	virtual int DLLCALLCONV getFieldCount() { return numElement; }

@@ -1,3 +1,23 @@
+/*
+ * BTRFdom - Rappelz BTRF Document Object Model
+ * By Glandu2
+ * Copyright 2013 Glandu2
+ *
+ * This file is part of BTRFdom.
+ * BTRFdom is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BTRFdom is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BTRFdom.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef INTERFACEC_H
 #define INTERFACEC_H
 
@@ -21,7 +41,7 @@ DLLEXPORT_BTRF void DLLCALLCONV setTemplateIdBtrfBlock(IBtrfBlock *self, int id)
 DLLEXPORT_BTRF ITmlBlock * DLLCALLCONV getFieldInfoBtrfBlock(IBtrfBlock *self);
 DLLEXPORT_BTRF int DLLCALLCONV getElementNumberBtrfBlock(IBtrfBlock *self);
 DLLEXPORT_BTRF int DLLCALLCONV getTemplateIdBtrfBlock(IBtrfBlock *self);
-DLLEXPORT_BTRF TemplateGuid DLLCALLCONV getTemplateGuidBtrfBlock(IBtrfBlock *self);
+DLLEXPORT_BTRF const TemplateGuid* DLLCALLCONV getTemplateGuidBtrfBlock(IBtrfBlock *self);
 
 //Copy memory
 //String take a array of index to strings (int [])
@@ -65,8 +85,8 @@ DLLEXPORT_BTRF IBtrfRootBlock * DLLCALLCONV createBtrfRootBlock(ITmlFile *tmlFil
 DLLEXPORT_BTRF void DLLCALLCONV addStringBtrfRootBlock(IBtrfRootBlock *self, const char* str);
 DLLEXPORT_BTRF const char * DLLCALLCONV getStringBtrfRootBlock(IBtrfRootBlock *self, int index);
 
-DLLEXPORT_BTRF void DLLCALLCONV addTemplateBtrfRootBlock(IBtrfRootBlock *self, TemplateGuid guid, int usedField);
-DLLEXPORT_BTRF TemplateGuid DLLCALLCONV getTemplateGuidBtrfRootBlock(IBtrfRootBlock *self, int index);
+DLLEXPORT_BTRF void DLLCALLCONV addTemplateBtrfRootBlock(IBtrfRootBlock *self, const TemplateGuid* guid, int usedField);
+DLLEXPORT_BTRF const TemplateGuid* DLLCALLCONV getTemplateGuidBtrfRootBlock(IBtrfRootBlock *self, int index);
 DLLEXPORT_BTRF int DLLCALLCONV getTemplateUsedFieldBtrfRootBlock(IBtrfRootBlock *self, int index);
 DLLEXPORT_BTRF int DLLCALLCONV getStringNumBtrfRootBlock(IBtrfRootBlock *self);
 DLLEXPORT_BTRF int DLLCALLCONV getTemplateNumBtrfRootBlock(IBtrfRootBlock *self);
@@ -74,7 +94,7 @@ DLLEXPORT_BTRF int DLLCALLCONV getTemplateNumBtrfRootBlock(IBtrfRootBlock *self)
 DLLEXPORT_BTRF ITmlFile * DLLCALLCONV getTmlFileBtrfRootBlock(IBtrfRootBlock *self);
 
 DLLEXPORT_BTRF void DLLCALLCONV addBlockBtrfRootBlock(IBtrfRootBlock *self, IBtrfBlock *block);
-DLLEXPORT_BTRF IBtrfBlock * DLLCALLCONV getBlockByGuidBtrfRootBlock(IBtrfRootBlock *self, TemplateGuid guid);
+DLLEXPORT_BTRF IBtrfBlock * DLLCALLCONV getBlockByGuidBtrfRootBlock(IBtrfRootBlock *self, const TemplateGuid* guid);
 DLLEXPORT_BTRF IBtrfBlock * DLLCALLCONV getBlockByNameBtrfRootBlock(IBtrfRootBlock *self, int id);
 DLLEXPORT_BTRF int DLLCALLCONV getBlockNumBtrfRootBlock(IBtrfRootBlock *self);
 
@@ -84,7 +104,7 @@ DLLEXPORT_BTRF void DLLCALLCONV dumpToStdoutBtrfRootBlock(IBtrfRootBlock *self);
 DLLEXPORT_BTRF ITmlBlock * DLLCALLCONV createTmlBlock();
 
 DLLEXPORT_BTRF bool DLLCALLCONV getIsValidTmlBlock(ITmlBlock *self);
-DLLEXPORT_BTRF TemplateGuid DLLCALLCONV getTemplateGuidTmlBlock(ITmlBlock *self);
+DLLEXPORT_BTRF const TemplateGuid* DLLCALLCONV getTemplateGuidTmlBlock(ITmlBlock *self);
 DLLEXPORT_BTRF const char* DLLCALLCONV getNameTmlBlock(ITmlBlock *self);
 DLLEXPORT_BTRF ITmlBlock* DLLCALLCONV getFieldTmlBlock(ITmlBlock *self, int i);
 DLLEXPORT_BTRF int DLLCALLCONV getFieldCountTmlBlock(ITmlBlock *self);
@@ -96,7 +116,7 @@ DLLEXPORT_BTRF bool DLLCALLCONV getHasVariableSizeTmlBlock(ITmlBlock *self);
 DLLEXPORT_BTRF ITmlFile * DLLCALLCONV createTmlFile();
 
 DLLEXPORT_BTRF bool DLLCALLCONV parseFileTmlFile(ITmlFile *self, const char *file);
-DLLEXPORT_BTRF ITmlBlock* DLLCALLCONV getTemplateByGuidTmlFile(ITmlFile *self, const TemplateGuid& guid);
+DLLEXPORT_BTRF ITmlBlock* DLLCALLCONV getTemplateByGuidTmlFile(ITmlFile *self, const TemplateGuid* guid);
 DLLEXPORT_BTRF ITmlBlock* DLLCALLCONV getTemplateByNameTmlFile(ITmlFile *self, const char* name);
 
 DLLEXPORT_BTRF void DLLCALLCONV addTemplateTmlFile(ITmlFile *self, ITmlBlock *templateStruct);

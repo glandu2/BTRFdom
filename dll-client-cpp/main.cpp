@@ -51,7 +51,7 @@ void inverse4x4(const float a[][4], float b[][4])
     float c0 = a[2][0] * a[3][1] - a[3][0] * a[2][1];
 
     // Should check for 0 determinant
-    float invdet = 1.0 / (s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0);
+	float invdet = 1.0f / (s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0);
 
     b[0][0] = ( a[1][1] * c5 - a[1][2] * c4 + a[1][3] * c3) * invdet;
     b[0][1] = (-a[0][1] * c5 + a[0][2] * c4 - a[0][3] * c3) * invdet;
@@ -789,10 +789,10 @@ void writeCollada(const Model& model, FILE* file) {
 
 void parseFunc(IBtrfRootBlock* rootBlock, IBtrfRootBlock* animRootBlock, FILE* file) {
 
-	GUID nx3_mtl_header_guid = {0x209BBB41, 0x681F, 0x4b9b, {0x97, 0x44, 0x4D, 0x88, 0xE1, 0x41, 0x3D, 0xCC}};
-	GUID nx3_new_mesh_header = {0xA6D25AEB, 0xA735, 0x1FEF, {0xC1, 0x7D, 0xEE, 0x21, 0x17, 0x49, 0x82, 0x26}};
-	GUID nx3_mesh_header =     {0xD6D25AEB, 0xA735, 0x4fef, {0xA1, 0x7D, 0x6E, 0x21, 0x17, 0x49, 0x82, 0x26}};
-//	GUID nx3_bone_ani_header = {0xE8F9296B, 0xB9DD, 0x4080, {0x8B, 0xC7, 0x6C, 0x69, 0xE0, 0xAA, 0x3F, 0xEB}};
+	Guid nx3_mtl_header_guid = {0x209BBB41, 0x681F, 0x4b9b, {0x97, 0x44, 0x4D, 0x88, 0xE1, 0x41, 0x3D, 0xCC}};
+	Guid nx3_new_mesh_header = {0xA6D25AEB, 0xA735, 0x1FEF, {0xC1, 0x7D, 0xEE, 0x21, 0x17, 0x49, 0x82, 0x26}};
+	Guid nx3_mesh_header =     {0xD6D25AEB, 0xA735, 0x4fef, {0xA1, 0x7D, 0x6E, 0x21, 0x17, 0x49, 0x82, 0x26}};
+//	Guid nx3_bone_ani_header = {0xE8F9296B, 0xB9DD, 0x4080, {0x8B, 0xC7, 0x6C, 0x69, 0xE0, 0xAA, 0x3F, 0xEB}};
 
 	Model model;
 	Material material;
@@ -869,7 +869,7 @@ void parseFunc(IBtrfRootBlock* rootBlock, IBtrfRootBlock* animRootBlock, FILE* f
 
 					for(int l = 0; l < bone.verticeCount; ++l) {
 						VertexBoneAssociation assoc;
-						int vertexIndex = bone.boneVertex[l].vertexIndex;
+						int vertexIndex = (int) bone.boneVertex[l].vertexIndex;
 
 						assoc.boneIndex = k;
 						assoc.weight = bone.boneVertex[l].weight;
@@ -1013,7 +1013,7 @@ int main(int argc, char* argv[])
 		fclose(outfile);
 	}
 
-    return 0;
+	return 0;
 }
 
 void help() {

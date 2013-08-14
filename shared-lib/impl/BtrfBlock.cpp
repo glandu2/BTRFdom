@@ -23,14 +23,6 @@
 #include "TmlBlock.h"
 #include "BtrfRootBlock.h"
 
-char *strdup (const char *s) {
-	char *d = (char*)malloc (strlen (s) + 1);   // Space for length plus nul
-	if (d == NULL)
-		return NULL;                     // No memory
-	strcpy (d,s);                        // Copy the characters
-	return d;                            // Return the new string
-}
-
 void BtrfBlock::setData(ElementType dataType, void *data, int num) {
 	if(num)
 		numElement = num;
@@ -175,7 +167,7 @@ void BtrfBlock::freeData() {
 	}
 }
 
-TemplateGuid BtrfBlock::getTemplateGuid() {
+const TemplateGuid& BtrfBlock::getTemplateGuid() {
 	if(templateId != -1)
 		return rootBlock->getTemplateGuid(templateId);
 	else
@@ -290,13 +282,13 @@ void BtrfBlock::dumpToStdout() {
 		break;
 
 	case ET_Template: {
-		TemplateGuid templateGuid = getTemplateGuid();
+		const TemplateGuid* templateGuid = &getTemplateGuid();
 
 		std::cout << "Template GUID = " << std::hex << std::uppercase <<
-					 (unsigned int)templateGuid.Data1 << '-' << (unsigned int)templateGuid.Data2 << '-' << (unsigned int)templateGuid.Data3 << '-' <<
-					 (unsigned int)templateGuid.Data4[0] << (unsigned int)templateGuid.Data4[1] << '-' << (unsigned int)templateGuid.Data4[2] <<
-					 (unsigned int)templateGuid.Data4[3] << (unsigned int)templateGuid.Data4[4] << (unsigned int)templateGuid.Data4[5] <<
-					 (unsigned int)templateGuid.Data4[6] << (unsigned int)templateGuid.Data4[7] << std::dec << " " << getName() << ", " << numElement << " subfields\n{\n";
+					 (unsigned int)templateGuid->Data1 << '-' << (unsigned int)templateGuid->Data2 << '-' << (unsigned int)templateGuid->Data3 << '-' <<
+					 (unsigned int)templateGuid->Data4[0] << (unsigned int)templateGuid->Data4[1] << '-' << (unsigned int)templateGuid->Data4[2] <<
+					 (unsigned int)templateGuid->Data4[3] << (unsigned int)templateGuid->Data4[4] << (unsigned int)templateGuid->Data4[5] <<
+					 (unsigned int)templateGuid->Data4[6] << (unsigned int)templateGuid->Data4[7] << std::dec << " " << getName() << ", " << numElement << " subfields\n{\n";
 		for(i=0; i<numElement; i++)
 			static_cast<BtrfBlock*>(data)[i].dumpToStdout();
 		std::cout << "}";

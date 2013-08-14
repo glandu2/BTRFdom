@@ -29,7 +29,7 @@ class IBtrfRootBlock;
 
 // {E109854D-B397-4e02-B76A-E702FBC7B1CF}
 static const Guid IID_IBtrfBlock =
-{{ 0xe109854d, 0xb397, 0x4e02, { 0xb7, 0x6a, 0xe7, 0x2, 0xfb, 0xc7, 0xb1, 0xcf } }};
+{ 0xe109854d, 0xb397, 0x4e02, { 0xb7, 0x6a, 0xe7, 0x2, 0xfb, 0xc7, 0xb1, 0xcf } };
 
 
 class IBtrfBlock : public CImplement<IObject>
@@ -41,7 +41,7 @@ public:
 	virtual ITmlBlock * DLLCALLCONV getFieldInfo() = 0;
 	virtual int DLLCALLCONV getElementNumber() = 0;
 	virtual int DLLCALLCONV getTemplateId() = 0;
-	virtual TemplateGuid DLLCALLCONV getTemplateGuid() = 0;
+	virtual const TemplateGuid& DLLCALLCONV getTemplateGuid() = 0;
 
 	//Copy memory
 	//String take a array of index to strings (int [])

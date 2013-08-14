@@ -46,10 +46,11 @@ TmlBlock* TmlFile::getTemplate(const TemplateGuid& guid) {
 	} catch(...) {
 		std::cerr << "Missing template definition, .tml file is missing ?, guid = " << std::hex << std::uppercase <<
 						(unsigned int)guid.Data1 << '-' << (unsigned int)guid.Data2 << '-' << (unsigned int)guid.Data3 << '-' <<
-                        (unsigned int)guid.Data4[0] << (unsigned int)guid.Data4[1] << '-' << (unsigned int)guid.Data4[2] <<
-                        (unsigned int)guid.Data4[3] << (unsigned int)guid.Data4[4] << (unsigned int)guid.Data4[5] <<
-                        (unsigned int)guid.Data4[6] << (unsigned int)guid.Data4[7] << '\n';
+						(unsigned int)guid.Data4[0] << (unsigned int)guid.Data4[1] << '-' << (unsigned int)guid.Data4[2] <<
+						(unsigned int)guid.Data4[3] << (unsigned int)guid.Data4[4] << (unsigned int)guid.Data4[5] <<
+						(unsigned int)guid.Data4[6] << (unsigned int)guid.Data4[7] << '\n';
 		abort();
+		return nullptr;
 	}
 }
 
@@ -59,6 +60,7 @@ TmlBlock* TmlFile::getTemplate(const char *name) {
 	} catch(...) {
 		std::cerr << "Missing template definition, .tml file is missing ?, field name = " << name << '\n';
 		abort();
+		return nullptr;
 	}
 }
 

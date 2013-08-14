@@ -48,7 +48,7 @@ protected:
 	void writeBlock(FILE* file, BtrfBlock *block);
 
 private:
-	struct __attribute__((packed)) GlobalHeader  {
+	struct GlobalHeader  {
 		char btrf[4];
 		int header_size;	//always 4
 		short major_version;

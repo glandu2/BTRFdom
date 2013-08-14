@@ -18,38 +18,36 @@
  * along with BTRFdom.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ITMLFILE_H
-#define ITMLFILE_H
+#ifndef IBTRFPARSER_H
+#define IBTRFPARSER_H
 
 #include "IObject.h"
 #include "MemberType.h"
 
-class ITmlBlock;
+class IBtrfRootBlock;
+class ITmlFile;
 
-// {DE4BF2A8-44CF-41ff-A17C-07C95468515A}
-static const Guid IID_ITmlFile =
-{{ 0xde4bf2a8, 0x44cf, 0x41ff, { 0xa1, 0x7c, 0x7, 0xc9, 0x54, 0x68, 0x51, 0x5a } }};
+// {1627C9F4-F71C-4723-9274-011D54DD7D8A}
+static const Guid IID_IBtrfParser =
+{ 0x1627c9f4, 0xf71c, 0x4723, { 0x92, 0x74, 0x1, 0x1d, 0x54, 0xdd, 0x7d, 0x8a } };
 
 
-class ITmlFile : public CImplement<IObject>
+class IBtrfParser : public CImplement<IObject>
 {
 public:
-	virtual bool DLLCALLCONV parseFile(const char *file) = 0;
-	virtual ITmlBlock* DLLCALLCONV getTemplate(const TemplateGuid& guid) = 0;
-	virtual ITmlBlock* DLLCALLCONV getTemplate(const char* name) = 0;
-
-	virtual void DLLCALLCONV addTemplate(ITmlBlock *templateStruct) = 0;
+	virtual IBtrfRootBlock * DLLCALLCONV readFile(const char* filename) = 0;
+	virtual void DLLCALLCONV writeFile(const char* filename, IBtrfRootBlock *rootBlock) = 0;
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-DLLEXPORT_BTRF ITmlFile * DLLCALLCONV createTmlFile();
+DLLEXPORT_BTRF IBtrfParser * DLLCALLCONV createBtrfParser(ITmlFile *tmlFile);
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif // ITMLFILE_H
+#endif // IBTRFPARSER_H
