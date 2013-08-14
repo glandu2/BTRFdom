@@ -60,7 +60,7 @@ static const Guid COM_IID_IUnknown =
 		{                                                                           \
 			*ppObj = (IUnknown*)this;                                               \
 			AddRef();                                                               \
-			return S_OK;                                                            \
+			return COM_NOERROR;                                                     \
 		}                                                                           \
 		*ppObj = NULL;                                                              \
 		return COM_E_NOINTERFACE;                                                   \

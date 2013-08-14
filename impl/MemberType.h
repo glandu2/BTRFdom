@@ -23,7 +23,13 @@
 
 #include <string.h>
 #include <functional>
+
+#ifndef __unix__
 #include <windows.h>
+#else
+#include "Guid.h"
+#define GUID Guid
+#endif
 /*
 enum ElementType {
 	ET_None = 0x0,

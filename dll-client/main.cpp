@@ -24,7 +24,7 @@
 #include "IBtrfRootBlock.h"
 #include "IBtrfBlock.h"
 #include "ITmlFile.h"
-#include <windows.h>
+#include "MemberType.h"
 #include <assert.h>
 
 #include <math.h>

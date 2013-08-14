@@ -181,6 +181,7 @@ bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
 						std::deque<TmlBlock*>::const_iterator itEnd = subfields.cend();
 
 						subBlock->numElement = 0;
+						subBlock->hasVariableSize = true;
 						hasVariableSize = true;
 
 						//Delete the referenced field if still in field list
@@ -190,9 +191,11 @@ bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
 								break;
 							}
 						}
-					}
+					} else
+						subBlock->hasVariableSize = false;
 				} else {
 					subBlock->numElement = 1;
+					subBlock->hasVariableSize = false;
 				}
 
 				subfields.push_back(subBlock);

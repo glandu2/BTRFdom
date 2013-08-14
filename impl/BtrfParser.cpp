@@ -122,7 +122,7 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 	block->construct(tmlField, rootBlock);
 	block->setElementNumber(block->getFieldInfo()->getFieldCount());
 
-	if(elementType == ET_TemplateArray || block->getFieldInfo()->getHasVariableSize())
+	if(elementType != ET_Template && (elementType == ET_TemplateArray || block->getFieldInfo()->getHasVariableSize()))
 		blockSize = *file->read<int>(4);
 
 	switch(elementType) {
