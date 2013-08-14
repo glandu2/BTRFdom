@@ -19,3 +19,6 @@ Notes
 -----
 
 A python client example is available in dll-client-python.
+
+Project for the [ElitePvPers](http://www.elitepvpers.com/forum/rappelz-private-server/) community,
+[original thread](http://www.elitepvpers.com/forum/rappelz-private-server/2786335-release-btrf-reader-writer-source.html)
