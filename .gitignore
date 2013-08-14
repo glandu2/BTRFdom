@@ -21,6 +21,10 @@ CMakeLists.txt.*
 *.bak
 *.tmp
 
+# Platform dependent project files
+project*
+
+
 #############
 ## Windows detritus
 #############
