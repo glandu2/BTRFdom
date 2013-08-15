@@ -40,7 +40,7 @@ TmlFile::~TmlFile() {
 	templatesByName.clear();
 }
 
-TmlBlock* TmlFile::getTemplate(const TemplateGuid& guid) {
+TmlBlock* TmlFile::getTemplateByGuid(const TemplateGuid& guid) {
 	try {
 		return templatesByGuid.at(guid);
 	} catch(...) {
@@ -54,7 +54,7 @@ TmlBlock* TmlFile::getTemplate(const TemplateGuid& guid) {
 	}
 }
 
-TmlBlock* TmlFile::getTemplate(const char *name) {
+TmlBlock* TmlFile::getTemplateByName(const char *name) {
 	try {
 		return templatesByName.at(std::string(name));
 	} catch(...) {

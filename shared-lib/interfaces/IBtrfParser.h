@@ -32,7 +32,7 @@ static const Guid IID_IBtrfParser =
 { 0x1627c9f4, 0xf71c, 0x4723, { 0x92, 0x74, 0x1, 0x1d, 0x54, 0xdd, 0x7d, 0x8a } };
 
 
-class IBtrfParser : public CImplement<IObject>
+class IBtrfParser : public IObject
 {
 public:
 	virtual IBtrfRootBlock * DLLCALLCONV readFile(const char* filename) = 0;

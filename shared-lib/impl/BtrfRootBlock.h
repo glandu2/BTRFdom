@@ -34,7 +34,7 @@ struct TemplateInfo {
 	int usedFieldsNum;
 };
 
-class BtrfRootBlock : public IBtrfRootBlock
+class BtrfRootBlock : public CImplement<IBtrfRootBlock>
 {
 public:
 	BtrfRootBlock(TmlFile *tmlFile);
@@ -43,10 +43,10 @@ public:
 	COM_DECLARE_IFACE(IBtrfRootBlock)
 	COM_END_DECLARE_IFACE
 
-	virtual void DLLCALLCONV addString(const char* str);
+	virtual int DLLCALLCONV addString(const char* str);
 	virtual const char * DLLCALLCONV getString(int index);
 
-	virtual void DLLCALLCONV addTemplate(const TemplateGuid& guid, int usedField);
+	virtual int DLLCALLCONV addTemplate(const TemplateGuid& guid, int usedField);
 	virtual const TemplateGuid& DLLCALLCONV getTemplateGuid(int index);
 	virtual int DLLCALLCONV getTemplateUsedField(int index);
 	virtual int DLLCALLCONV getStringNum() { return stringList.size(); }
@@ -54,9 +54,9 @@ public:
 
 	virtual TmlFile * DLLCALLCONV getTmlFile() { return tmlFile; }
 
-	virtual void DLLCALLCONV addBlock(IBtrfBlock *block);
-	virtual BtrfBlock * DLLCALLCONV getBlock(const TemplateGuid& guid) { try {return blocks.find(guid)->second; } catch(...) { return 0; } }
-	virtual BtrfBlock * DLLCALLCONV getBlock(int id) { return blockList.at(id); }
+	virtual int DLLCALLCONV addBlock(IBtrfBlock *block);
+	virtual BtrfBlock * DLLCALLCONV getBlockByGuid(const TemplateGuid& guid) { try {return blocks.find(guid)->second; } catch(...) { return 0; } }
+	virtual BtrfBlock * DLLCALLCONV getBlockById(int id) { return blockList.at(id); }
 	virtual int DLLCALLCONV getBlockNum() { return blockList.size(); }
 
 	virtual void DLLCALLCONV dumpToStdout();

@@ -31,10 +31,7 @@ extern "C" {
 #pragma comment(linker, "/export:createBtrfBlock=_createBtrfBlock@8")
 #endif
 DLLEXPORT_BTRF IBtrfBlock * DLLCALLCONV createBtrfBlock(ITmlBlock *fieldInfo, IBtrfRootBlock *rootBlock) {
-	BtrfBlock *block = new BtrfBlock;
-	block->construct(static_cast<TmlBlock*>(fieldInfo), static_cast<BtrfRootBlock*>(rootBlock));
-
-	return block;
+	return new BtrfBlock(static_cast<TmlBlock*>(fieldInfo), static_cast<BtrfRootBlock*>(rootBlock));
 }
 
 #ifdef __cplusplus

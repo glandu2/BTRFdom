@@ -28,7 +28,6 @@
 
 TmlBlock::TmlBlock()
 {
-	isValid = false;
 	memset(&guid, 0, sizeof(guid));
 	elementType = ET_None;
 	numElement = 0;
@@ -147,7 +146,7 @@ bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
 					subBlock->elementType = ET_String;
 				} else {
 					subBlock->elementType = ET_TemplateArray;
-					subBlock->subfields.push_back(tmlFile->getTemplate(p1));
+					subBlock->subfields.push_back(tmlFile->getTemplateByName(p1));
 				}
 
 				p1 = p2+1;
@@ -207,8 +206,6 @@ bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
 			break;
 		}
 	} while(state != S_End);
-
-	isValid = true;
 
 	return true;
 }

@@ -97,11 +97,11 @@ BtrfRootBlock *BtrfParser::readFile(const char* filename) {
 		file->read<int>(4);	//blockSize
 		templateIndex = *file->read<short>(2) - 1;
 
-		BtrfBlock *block = new BtrfBlock;
-		block->setTemplateId(templateIndex);
-
-		TmlBlock *templateField = rootBlock->getTmlFile()->getTemplate(rootBlock->getTemplateGuid(templateIndex));
+		TmlBlock *templateField = rootBlock->getTmlFile()->getTemplateByGuid(rootBlock->getTemplateGuid(templateIndex));
 		templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
+
+		BtrfBlock *block = new BtrfBlock(templateField, rootBlock);
+		block->setTemplateId(templateIndex);
 
 		if(!readBlock(block, templateField)) {
 			std::cerr << "Premature end of file\n";
@@ -119,8 +119,6 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 	short templateIndex;
 
 	ElementType elementType = tmlField->getType();
-	block->construct(tmlField, rootBlock);
-	block->setElementNumber(block->getFieldInfo()->getFieldCount());
 
 	if(elementType != ET_Template && (elementType == ET_TemplateArray || block->getFieldInfo()->getHasVariableSize()))
 		blockSize = *file->read<int>(4);
@@ -134,26 +132,30 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 			TmlBlock *templateField = block->getFieldInfo()->getField(0);
 			templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
 
-			block->setElementNumber(*file->read<int>(4));
+			int subBlockCount = *file->read<int>(4);
 
-			block->setData(ET_TemplateArray);
-			for(i = 0; i < block->getElementNumber(); i++) {
+			for(i = 0; i < subBlockCount; i++) {
+				BtrfBlock *subBlock = new BtrfBlock(templateField, rootBlock);
 				if(templateField->getHasVariableSize())
 					file->read<int>(4);	//elementSize
-				readBlock(block->getBlock(i), templateField);
+				readBlock(subBlock, templateField);
+
+				block->addBlock(subBlock);
 			}
 		} else {
-			block->setData(ET_TemplateArray);
-			for(i = 0; i < block->getElementNumber(); i++)
-				readBlock(block->getBlock(i), block->getFieldInfo()->getField(0));
+			for(i = 0; i < block->getFieldInfo()->getFieldCount(); i++) {
+				BtrfBlock *subBlock = new BtrfBlock(block->getFieldInfo()->getField(0), rootBlock);
+				readBlock(subBlock, block->getFieldInfo()->getField(0));
+				block->addBlock(subBlock);
+			}
 		}
 		break;
 
 	case ET_Template:
-		block->setData(ET_Template);
-
-		for(i = 0; i < block->getElementNumber(); i++) {
-			readBlock(block->getBlock(i), block->getFieldInfo()->getField(i));
+		for(i = 0; i < block->getFieldInfo()->getFieldCount(); i++) {
+			BtrfBlock *subBlock = new BtrfBlock(block->getFieldInfo()->getField(i), rootBlock);
+			readBlock(subBlock, block->getFieldInfo()->getField(i));
+			block->addBlock(subBlock);
 		}
 		break;
 
@@ -163,7 +165,7 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(char));
 		}
-		block->setDataPtr(elementType, const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(char))));
+		block->setDataCharPtr((char*)file->read<char>(block->getElementNumber()*sizeof(char)));
 		break;
 
 	case ET_Word:
@@ -171,7 +173,7 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(short));
 		}
-		block->setDataPtr(elementType, const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(short))));
+		block->setDataShortPtr((short*)file->read<short>(block->getElementNumber()*sizeof(short)));
 		break;
 
 	case ET_DWord:
@@ -179,7 +181,7 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(int));
 		}
-		block->setDataPtr(elementType, const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(int))));
+		block->setDataIntPtr((int*)file->read<int>(block->getElementNumber()*sizeof(int)));
 		break;
 
 	case ET_Float:
@@ -187,7 +189,7 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(float));
 		}
-		block->setDataPtr(elementType, const_cast<void*>(file->read<void>(block->getElementNumber()*sizeof(float))));
+		block->setDataFloatPtr((float*)file->read<float>(block->getElementNumber()*sizeof(float)));
 		break;
 
 	case ET_String:
@@ -195,13 +197,13 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 			file->read<char>(1);	//type
 			block->setElementNumber((blockSize-1) / sizeof(int));
 		}
-		block->setData(elementType);
+
 		for(i = 0; i < block->getElementNumber(); i++) {
 			int stringId = *file->read<int>(4);
 			if(stringId == 0)
-				block->getDataPtr<int*>()[i] = -1;
+				block->setDataInt(i, -1);
 			else {
-				block->getDataPtr<int*>()[i] = stringId-1;
+				block->setDataInt(i, stringId-1);
 			}
 		}
 		break;
@@ -295,7 +297,7 @@ void BtrfParser::writeFile(const char* filename, IBtrfRootBlock *iRootBlock) {
 	fwrite(&value, 1, 4, file);
 	for(int i = 0; i < rootBlock->getBlockNum(); i++) {
 		int subBlockSizePosition;
-		BtrfBlock *currentBlock = rootBlock->getBlock(i);
+		BtrfBlock *currentBlock = rootBlock->getBlockById(i);
 
 		//Dummy + type
 		value = 0x09000000;  //3 null bytes + 0x9 as type
@@ -381,7 +383,7 @@ void BtrfParser::writeBlock(FILE* file, BtrfBlock *block) {
 			value = ET_Char;
 			fwrite(&value, 1, 1, file);
 		}
-		fwrite(block->getDataPtr<char*>(), sizeof(char), block->getElementNumber(), file);
+		fwrite(block->getDataCharPtr(), sizeof(char), block->getElementNumber(), file);
 		break;
 
 	case ET_Word:
@@ -389,7 +391,7 @@ void BtrfParser::writeBlock(FILE* file, BtrfBlock *block) {
 			value = elementType;
 			fwrite(&value, 1, 1, file);
 		}
-		fwrite(block->getDataPtr<short*>(), sizeof(short), block->getElementNumber(), file);
+		fwrite(block->getDataShortPtr(), sizeof(short), block->getElementNumber(), file);
 		break;
 
 	case ET_DWord:
@@ -397,7 +399,7 @@ void BtrfParser::writeBlock(FILE* file, BtrfBlock *block) {
 			value = elementType;
 			fwrite(&value, 1, 1, file);
 		}
-		fwrite(block->getDataPtr<int*>(), sizeof(int), block->getElementNumber(), file);
+		fwrite(block->getDataIntPtr(), sizeof(int), block->getElementNumber(), file);
 		break;
 
 	case ET_Float:
@@ -405,7 +407,7 @@ void BtrfParser::writeBlock(FILE* file, BtrfBlock *block) {
 			value = elementType;
 			fwrite(&value, 1, 1, file);
 		}
-		fwrite(block->getDataPtr<float*>(), sizeof(float), block->getElementNumber(), file);
+		fwrite(block->getDataFloatPtr(), sizeof(float), block->getElementNumber(), file);
 		break;
 
 	case ET_String:
