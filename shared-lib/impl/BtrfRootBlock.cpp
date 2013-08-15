@@ -26,9 +26,22 @@ BtrfRootBlock::BtrfRootBlock(TmlFile *tmlFile) : tmlFile(tmlFile)
 	//ctor
 }
 
-int BtrfRootBlock::addBlock(IBtrfBlock *block) {
-	blocks.insert(std::pair<TemplateGuid, BtrfBlock*>(block->getTemplateGuid(), static_cast<BtrfBlock*>(block)));
-	blockList.push_back(static_cast<BtrfBlock*>(block));
+int BtrfRootBlock::addBlock(IBtrfBlock *iBlock) {
+	BtrfBlock* block = static_cast<BtrfBlock*>(iBlock);
+
+	if(block->getTemplateId() == -1) {
+		for(unsigned int i = 0; i < templateList.size(); i++) {
+			if(templateList.at(i).guid == block->getFieldInfo()->getTemplateGuid()) {
+				block->setTemplateId(i);
+				break;
+			}
+		}
+		if(block->getTemplateId() == -1)
+			block->setTemplateId(addTemplate(block->getFieldInfo()->getTemplateGuid(), block->getElementNumber()));
+	}
+
+	blocks.insert(std::pair<TemplateGuid, BtrfBlock*>(block->getTemplateGuid(), block));
+	blockList.push_back(block);
 	return blockList.size() - 1;
 }
 
@@ -38,6 +51,10 @@ int BtrfRootBlock::addString(const char* str) {
 }
 
 const char *BtrfRootBlock::getString(int index) {
+	if(index < 0 || index >= (int)stringList.size()) {
+		std::cerr << "Error: invalid string index: " << index << "but there is " << stringList.size() << "registered strings\n";
+		exit(-2);
+	}
 	return stringList.at(index).c_str();
 }
 
@@ -48,10 +65,18 @@ int BtrfRootBlock::addTemplate(const TemplateGuid& guid, int usedField) {
 }
 
 const TemplateGuid& BtrfRootBlock::getTemplateGuid(int index) {
+	if(index < 0 || index >= (int)templateList.size()) {
+		std::cerr << "Error: invalid template index: " << index << "but there is " << templateList.size() << "registered templates\n";
+		exit(-2);
+	}
 	return templateList.at(index).guid;
 }
 
 int BtrfRootBlock::getTemplateUsedField(int index) {
+	if(index < 0 || index >= (int)templateList.size()) {
+		std::cerr << "Error: invalid template index: " << index << "but there is " << templateList.size() << "registered templates\n";
+		exit(-2);
+	}
 	return templateList.at(index).usedFieldsNum;
 }
 

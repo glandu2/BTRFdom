@@ -42,7 +42,7 @@ public:
 	virtual const char* DLLCALLCONV getName() { return name.c_str(); }
 	virtual TmlBlock* DLLCALLCONV getField(int i) { return subfields.at(i); }
 	virtual int DLLCALLCONV getFieldCount() { return numElement; }
-	virtual void DLLCALLCONV setFieldCount(int num) { numElement = num; }
+	virtual void DLLCALLCONV setFieldCount(int num);
 	virtual ElementType DLLCALLCONV getType() { return elementType; }
 	virtual bool DLLCALLCONV getHasVariableSize() { return hasVariableSize; }
 

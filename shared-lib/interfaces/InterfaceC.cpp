@@ -146,6 +146,10 @@ DLLEXPORT_BTRF void DLLCALLCONV setDataStringIdBtrfBlock(IBtrfBlock *self, int i
 	self->setDataStringId(index, id);
 }
 
+DLLEXPORT_BTRF void DLLCALLCONV setDataStringBtrfBlock(IBtrfBlock *self, int index, const char* data) {
+	self->setDataString(index, data);
+}
+
 
 //setData*Ptr()
 

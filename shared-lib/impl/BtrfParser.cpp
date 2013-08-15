@@ -101,7 +101,7 @@ BtrfRootBlock *BtrfParser::readFile(const char* filename) {
 		templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
 
 		BtrfBlock *block = new BtrfBlock(templateField, rootBlock);
-		block->setTemplateId(templateIndex);
+		//block->setTemplateId(templateIndex);
 
 		if(!readBlock(block, templateField)) {
 			std::cerr << "Premature end of file\n";
@@ -128,7 +128,7 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 		if(block->getFieldInfo()->getHasVariableSize()) {
 			templateIndex = *file->read<short>(2) - 1;
 
-			block->setTemplateId(templateIndex);
+			//block->setTemplateId(templateIndex);
 			TmlBlock *templateField = block->getFieldInfo()->getField(0);
 			templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
 
@@ -322,6 +322,7 @@ void BtrfParser::writeFile(const char* filename, IBtrfRootBlock *iRootBlock) {
 	value = ftell(file) - blockSizePosition - 4;
 	fseek(file, blockSizePosition, SEEK_SET);
 	fwrite(&value, 1, 4, file);
+	fclose(file);
 }
 
 void BtrfParser::writeBlock(FILE* file, BtrfBlock *block) {

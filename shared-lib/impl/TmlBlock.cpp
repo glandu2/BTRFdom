@@ -25,6 +25,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#include <iostream>
 
 TmlBlock::TmlBlock()
 {
@@ -56,6 +57,14 @@ unsigned char strtochar(const char str[2]) {
 	else result |= (tolower(str[1]) - 'a' + 0xA);
 
 	return result;
+}
+
+void DLLCALLCONV TmlBlock::setFieldCount(int num) {
+	if(numElement && num > numElement) {
+		std::cerr << "Error: attempt to set field count to a greater value (" << num << ") than the original (" << numElement << ")! Template's used field number is likely to be wrong\n";
+	} else {
+		numElement = num;
+	}
 }
 
 bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
