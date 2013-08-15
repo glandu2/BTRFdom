@@ -16,7 +16,6 @@ set(DLLCLIENT_CPP_LIB_PATH "${CMAKE_CURRENT_LIST_DIR}/${DLLCLIENT_CPP_LIB_DIR}")
 set(SHARED_LIB_NAME "${PROJECT_NAME}")
 set(DLLCLIENT_CPP_NAME "BTRFReader")
 
-include_directories("${SHARED_LIB_PATH}/impl")
 include_directories("${SHARED_LIB_PATH}/common")
 include_directories("${SHARED_LIB_PATH}/interfaces")
 
