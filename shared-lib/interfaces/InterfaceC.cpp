@@ -84,8 +84,8 @@ DLLEXPORT_BTRF void DLLCALLCONV setDataBtrfBlock(IBtrfBlock *self, ElementType d
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:setDataContentBtrfBlock=_setDataContentBtrfBlock@16")
 #endif
-DLLEXPORT_BTRF void DLLCALLCONV setDataContentBtrfBlock(IBtrfBlock *self, ElementType dataType, void *data, int num) {
-	self->setData(dataType, data, num);
+DLLEXPORT_BTRF void DLLCALLCONV setDataContentBtrfBlock(IBtrfBlock *self, ElementType dataType, int num, void *data) {
+	self->setData(dataType, num, data);
 }
 
 #ifdef _MSC_VER
@@ -299,14 +299,14 @@ DLLEXPORT_BTRF void DLLCALLCONV addBlockBtrfRootBlock(IBtrfRootBlock *self, IBtr
 #pragma comment(linker, "/export:getBlockByGuidBtrfRootBlock=_getBlockByGuidBtrfRootBlock@8")
 #endif
 DLLEXPORT_BTRF IBtrfBlock * DLLCALLCONV getBlockByGuidBtrfRootBlock(IBtrfRootBlock *self, const TemplateGuid* guid) {
-	return self->getBlock(*guid);
+	return self->getBlockByGuid(*guid);
 }
 
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:getBlockByNameBtrfRootBlock=_getBlockByNameBtrfRootBlock@8")
 #endif
 DLLEXPORT_BTRF IBtrfBlock * DLLCALLCONV getBlockByNameBtrfRootBlock(IBtrfRootBlock *self, int id) {
-	return self->getBlock(id);
+	return self->getBlockById(id);
 }
 
 #ifdef _MSC_VER
@@ -392,14 +392,14 @@ DLLEXPORT_BTRF bool DLLCALLCONV parseFileTmlFile(ITmlFile *self, const char *fil
 #pragma comment(linker, "/export:getTemplateByGuidTmlFile=_getTemplateByGuidTmlFile@8")
 #endif
 DLLEXPORT_BTRF ITmlBlock* DLLCALLCONV getTemplateByGuidTmlFile(ITmlFile *self, const TemplateGuid* guid) {
-	return self->getTemplate(*guid);
+	return self->getTemplateByGuid(*guid);
 }
 
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:getTemplateByNameTmlFile=_getTemplateByNameTmlFile@8")
 #endif
 DLLEXPORT_BTRF ITmlBlock* DLLCALLCONV getTemplateByNameTmlFile(ITmlFile *self, const char* name) {
-	return self->getTemplate(name);
+	return self->getTemplateByName(name);
 }
 
 #ifdef _MSC_VER

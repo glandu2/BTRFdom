@@ -801,7 +801,7 @@ void parseFunc(IBtrfRootBlock* rootBlock, IBtrfRootBlock* animRootBlock, FILE* f
 
 	IBtrfBlock *currentBlock;
 
-	currentBlock = rootBlock->getBlock(nx3_mtl_header_guid);
+	currentBlock = rootBlock->getBlockByGuid(nx3_mtl_header_guid);
 	if(currentBlock) {
 		currentBlock = currentBlock->getBlock(0)->getBlock(0)->	//mtl_array
 							getBlock(0);	//sub_mtl_block_array
@@ -822,9 +822,9 @@ void parseFunc(IBtrfRootBlock* rootBlock, IBtrfRootBlock* animRootBlock, FILE* f
 		}
 	}
 
-	currentBlock = rootBlock->getBlock(nx3_new_mesh_header);
+	currentBlock = rootBlock->getBlockByGuid(nx3_new_mesh_header);
 	if(currentBlock == 0)
-		currentBlock = rootBlock->getBlock(nx3_mesh_header);
+		currentBlock = rootBlock->getBlockByGuid(nx3_mesh_header);
 	if(currentBlock) {
 		IBtrfBlock *subBlock = currentBlock->getBlock(0);
 
@@ -897,7 +897,7 @@ void parseFunc(IBtrfRootBlock* rootBlock, IBtrfRootBlock* animRootBlock, FILE* f
 	}
 
 /*
-	currentBlock = animRootBlock->getBlock(nx3_bone_ani_header);
+	currentBlock = animRootBlock->getBlockByGuid(nx3_bone_ani_header);
 	if(currentBlock) {
 		BtrfBlock *subBlock = currentBlock->getBlock(1);
 
@@ -910,17 +910,17 @@ void parseFunc(IBtrfRootBlock* rootBlock, IBtrfRootBlock* animRootBlock, FILE* f
 				BtrfBlock *boneBlock = channelBlock->getBlock(4)->getBlock(j);
 				BoneAnimation boneAnim;
 
-				boneAnim.boneName = boneBlock->getBlock(0)->getData<const char*>(0);
+				boneAnim.boneName = boneBlock->getBlock(0)->getDataString(0);
 
 				boneAnim.pos_time_count = boneBlock->getBlock(4)->getElementNumber();
-				boneAnim.pos_time_array = boneBlock->getBlock(4)->getDataPtr<int*>();
+				boneAnim.pos_time_array = boneBlock->getBlock(4)->getDataIntPtr();
 				boneAnim.pos_key_count = boneBlock->getBlock(5)->getElementNumber();
-				boneAnim.pos_key_array = boneBlock->getBlock(5)->getDataPtr<float*>();
+				boneAnim.pos_key_array = boneBlock->getBlock(5)->getDataFloatPtr();
 
 				boneAnim.rot_time_count = boneBlock->getBlock(6)->getElementNumber();
-				boneAnim.rot_time_array = boneBlock->getBlock(6)->getDataPtr<int*>();
+				boneAnim.rot_time_array = boneBlock->getBlock(6)->getDataIntPtr();
 				boneAnim.rot_key_count = boneBlock->getBlock(7)->getElementNumber();
-				boneAnim.rot_key_array = boneBlock->getBlock(7)->getDataPtr<float*>();
+				boneAnim.rot_key_array = boneBlock->getBlock(7)->getDataFloatPtr();
 
 				animationModel.boneAnims.push_back(boneAnim);
 			}

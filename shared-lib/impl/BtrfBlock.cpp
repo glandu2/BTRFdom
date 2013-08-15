@@ -23,7 +23,7 @@
 #include "TmlBlock.h"
 #include "BtrfRootBlock.h"
 
-void BtrfBlock::setData(ElementType dataType, void *data, int num) {
+void BtrfBlock::setData(ElementType dataType, int num, void *data) {
 	if(num)
 		numElement = num;
 

@@ -55,8 +55,8 @@ public:
 	virtual TmlFile * DLLCALLCONV getTmlFile() { return tmlFile; }
 
 	virtual void DLLCALLCONV addBlock(IBtrfBlock *block);
-	virtual BtrfBlock * DLLCALLCONV getBlock(const TemplateGuid& guid) { try {return blocks.find(guid)->second; } catch(...) { return 0; } }
-	virtual BtrfBlock * DLLCALLCONV getBlock(int id) { return blockList.at(id); }
+	virtual BtrfBlock * DLLCALLCONV getBlockByGuid(const TemplateGuid& guid) { try {return blocks.find(guid)->second; } catch(...) { return 0; } }
+	virtual BtrfBlock * DLLCALLCONV getBlockById(int id) { return blockList.at(id); }
 	virtual int DLLCALLCONV getBlockNum() { return blockList.size(); }
 
 	virtual void DLLCALLCONV dumpToStdout();

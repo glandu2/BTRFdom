@@ -35,8 +35,8 @@ class ITmlFile : public CImplement<IObject>
 {
 public:
 	virtual bool DLLCALLCONV parseFile(const char *file) = 0;
-	virtual ITmlBlock* DLLCALLCONV getTemplate(const TemplateGuid& guid) = 0;
-	virtual ITmlBlock* DLLCALLCONV getTemplate(const char* name) = 0;
+	virtual ITmlBlock* DLLCALLCONV getTemplateByGuid(const TemplateGuid& guid) = 0;
+	virtual ITmlBlock* DLLCALLCONV getTemplateByName(const char* name) = 0;
 
 	virtual void DLLCALLCONV addTemplate(ITmlBlock *templateStruct) = 0;
 };

@@ -100,7 +100,7 @@ BtrfRootBlock *BtrfParser::readFile(const char* filename) {
 		BtrfBlock *block = new BtrfBlock;
 		block->setTemplateId(templateIndex);
 
-		TmlBlock *templateField = rootBlock->getTmlFile()->getTemplate(rootBlock->getTemplateGuid(templateIndex));
+		TmlBlock *templateField = rootBlock->getTmlFile()->getTemplateByGuid(rootBlock->getTemplateGuid(templateIndex));
 		templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
 
 		if(!readBlock(block, templateField)) {
@@ -295,7 +295,7 @@ void BtrfParser::writeFile(const char* filename, IBtrfRootBlock *iRootBlock) {
 	fwrite(&value, 1, 4, file);
 	for(int i = 0; i < rootBlock->getBlockNum(); i++) {
 		int subBlockSizePosition;
-		BtrfBlock *currentBlock = rootBlock->getBlock(i);
+		BtrfBlock *currentBlock = rootBlock->getBlockById(i);
 
 		//Dummy + type
 		value = 0x09000000;  //3 null bytes + 0x9 as type

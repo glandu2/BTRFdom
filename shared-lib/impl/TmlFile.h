@@ -37,8 +37,8 @@ class TmlFile : public ITmlFile
 		COM_END_DECLARE_IFACE
 
 		virtual bool DLLCALLCONV parseFile(const char *file);
-		virtual TmlBlock* DLLCALLCONV getTemplate(const TemplateGuid& guid);
-		virtual TmlBlock* DLLCALLCONV getTemplate(const char* name);
+		virtual TmlBlock* DLLCALLCONV getTemplateByGuid(const TemplateGuid& guid);
+		virtual TmlBlock* DLLCALLCONV getTemplateByName(const char* name);
 
 		virtual void DLLCALLCONV addTemplate(ITmlBlock *iBlock);
 

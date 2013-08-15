@@ -45,12 +45,10 @@ public:
 
 	//Copy memory
 	//String take a array of index to strings (int [])
-	virtual void DLLCALLCONV setData(ElementType dataType, int num = 0) = 0;
-	virtual void DLLCALLCONV setData(ElementType dataType, void *data, int num = 0) = 0;
+	virtual void DLLCALLCONV setData(ElementType dataType, int num = 0, void *data = 0) = 0;
 	virtual void DLLCALLCONV freeData() = 0;
 
 	//Use a pointer and don't copy memory (in case of memory mapped file for example)
-	virtual void DLLCALLCONV setDataPtr(ElementType dataType, int num = 0) = 0;
 	virtual void DLLCALLCONV setDataPtr(ElementType dataType, void *data, int num = 0) = 0;
 
 	virtual const void * DLLCALLCONV getData(int index) = 0;

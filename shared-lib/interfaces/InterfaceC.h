@@ -47,7 +47,7 @@ DLLEXPORT_BTRF const TemplateGuid* DLLCALLCONV getTemplateGuidBtrfBlock(IBtrfBlo
 //String take a array of index to strings (int [])
 //set num = 0 to use Block's numElement value
 DLLEXPORT_BTRF void DLLCALLCONV setDataBtrfBlock(IBtrfBlock *self, ElementType dataType, int num);
-DLLEXPORT_BTRF void DLLCALLCONV setDataContentBtrfBlock(IBtrfBlock *self, ElementType dataType, void *data, int num);
+DLLEXPORT_BTRF void DLLCALLCONV setDataContentBtrfBlock(IBtrfBlock *self, ElementType dataType, int num, void *data);
 DLLEXPORT_BTRF void DLLCALLCONV freeDataBtrfBlock(IBtrfBlock *self);
 
 //Use a pointer and don't copy memory (in case of memory mapped file for example)

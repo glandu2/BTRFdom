@@ -46,8 +46,8 @@ public:
 	virtual ITmlFile * DLLCALLCONV getTmlFile() = 0;
 
 	virtual void DLLCALLCONV addBlock(IBtrfBlock *block) = 0;
-	virtual IBtrfBlock * DLLCALLCONV getBlock(const TemplateGuid& guid) = 0;
-	virtual IBtrfBlock * DLLCALLCONV getBlock(int id) = 0;
+	virtual IBtrfBlock * DLLCALLCONV getBlockByGuid(const TemplateGuid& guid) = 0;
+	virtual IBtrfBlock * DLLCALLCONV getBlockById(int id) = 0;
 	virtual int DLLCALLCONV getBlockNum() = 0;
 
 	virtual void DLLCALLCONV dumpToStdout() = 0;
