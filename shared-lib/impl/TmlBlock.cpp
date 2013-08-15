@@ -28,7 +28,6 @@
 
 TmlBlock::TmlBlock()
 {
-	isValid = false;
 	memset(&guid, 0, sizeof(guid));
 	elementType = ET_None;
 	numElement = 0;
@@ -207,8 +206,6 @@ bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
 			break;
 		}
 	} while(state != S_End);
-
-	isValid = true;
 
 	return true;
 }

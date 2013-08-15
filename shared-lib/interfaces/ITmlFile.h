@@ -31,7 +31,7 @@ static const Guid IID_ITmlFile =
 { 0xde4bf2a8, 0x44cf, 0x41ff, { 0xa1, 0x7c, 0x7, 0xc9, 0x54, 0x68, 0x51, 0x5a } };
 
 
-class ITmlFile : public CImplement<IObject>
+class ITmlFile : public IObject
 {
 public:
 	virtual bool DLLCALLCONV parseFile(const char *file) = 0;

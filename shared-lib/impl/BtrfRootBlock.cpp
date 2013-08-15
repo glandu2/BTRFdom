@@ -26,22 +26,25 @@ BtrfRootBlock::BtrfRootBlock(TmlFile *tmlFile) : tmlFile(tmlFile)
 	//ctor
 }
 
-void BtrfRootBlock::addBlock(IBtrfBlock *block) {
+int BtrfRootBlock::addBlock(IBtrfBlock *block) {
 	blocks.insert(std::pair<TemplateGuid, BtrfBlock*>(block->getTemplateGuid(), static_cast<BtrfBlock*>(block)));
 	blockList.push_back(static_cast<BtrfBlock*>(block));
+	return blockList.size() - 1;
 }
 
-void BtrfRootBlock::addString(const char* str) {
+int BtrfRootBlock::addString(const char* str) {
 	stringList.push_back(std::string(str));
+	return stringList.size() - 1;
 }
 
 const char *BtrfRootBlock::getString(int index) {
 	return stringList.at(index).c_str();
 }
 
-void BtrfRootBlock::addTemplate(const TemplateGuid& guid, int usedField) {
+int BtrfRootBlock::addTemplate(const TemplateGuid& guid, int usedField) {
 	TemplateInfo templateInfo = {guid, usedField};
 	templateList.push_back(templateInfo);
+	return templateList.size() - 1;
 }
 
 const TemplateGuid& BtrfRootBlock::getTemplateGuid(int index) {

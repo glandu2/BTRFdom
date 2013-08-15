@@ -33,59 +33,68 @@
 
 class BtrfRootBlock;
 
-class BtrfBlock : public IBtrfBlock
+class BtrfBlock : public CImplement<IBtrfBlock>
 {
 public:
-	BtrfBlock() : fieldInfo(nullptr), rootBlock(nullptr), numElement(0), data(nullptr), allocatedData(false), templateId(-1) {}
-
-	void construct(TmlBlock *fieldInfo, BtrfRootBlock *rootBlock) { this->fieldInfo = fieldInfo; this->rootBlock = rootBlock; }
+	BtrfBlock(TmlBlock *fieldInfo, BtrfRootBlock *rootBlock);
+	virtual ~BtrfBlock();
 
 	COM_BEGIN_DECLARE_IFACE
 	COM_DECLARE_IFACE(IBtrfBlock)
 	COM_END_DECLARE_IFACE
 
-	virtual void DLLCALLCONV setElementNumber(int num) { numElement = num; }
+	//internal
+
+	void initData();
+	void freeData();
+
+	template<typename T> void setData(int index, T data);
+	template<typename T> T getData(int index);
+	template<typename T> void setDataPtr(T* data);
+	template<typename T> T* getDataPtr();
+	void dumpToStdout();
+
+public:
+	virtual void DLLCALLCONV setElementNumber(int num);
 	virtual void DLLCALLCONV setTemplateId(int id) { templateId = id; }
 
 	virtual TmlBlock * DLLCALLCONV getFieldInfo() { return fieldInfo; }
+	virtual ElementType DLLCALLCONV getType() { return fieldInfo->getType(); }
+	virtual const char* DLLCALLCONV getName() { return fieldInfo->getName(); }
 	virtual int DLLCALLCONV getElementNumber() { return numElement; }
 	virtual int DLLCALLCONV getTemplateId() { return templateId; }
 	virtual const TemplateGuid& DLLCALLCONV getTemplateGuid();
 
-	//Copy memory
-	//String take a array of index to strings (int [])
-	virtual void DLLCALLCONV setData(ElementType dataType, int num = 0, void *data = nullptr);
-	virtual void DLLCALLCONV freeData();
-
-	//Use a pointer and don't copy memory (in case of memory mapped file for example)
-	virtual void DLLCALLCONV setDataPtr(ElementType dataType, void *data = nullptr, int num = 0);
-
-	virtual const void * DLLCALLCONV getData(int index);
-	virtual void * DLLCALLCONV getDataPtr() { return data; }
-
-	template<typename T> T getData(int index);
-	template<typename T> T getDataPtr();
-
+	virtual int DLLCALLCONV addBlock(IBtrfBlock *block);
 	virtual BtrfBlock* DLLCALLCONV getBlock(int index);
+
+	virtual void DLLCALLCONV setDataChar(int index, char data) { setData<char>(index, data); }
+	virtual void DLLCALLCONV setDataShort(int index, short data) { setData<short>(index, data); }
+	virtual void DLLCALLCONV setDataInt(int index, int data) { setData<int>(index, data); }
+	virtual void DLLCALLCONV setDataFloat(int index, float data) { setData<float>(index, data); }
+	virtual void DLLCALLCONV setDataStringId(int index, int id) { setData<int>(index, id); }
+
+	virtual void DLLCALLCONV setDataCharPtr(char *data) { setDataPtr<char>(data); }
+	virtual void DLLCALLCONV setDataShortPtr(short *data) { setDataPtr<short>(data); }
+	virtual void DLLCALLCONV setDataIntPtr(int *data) { setDataPtr<int>(data); }
+	virtual void DLLCALLCONV setDataFloatPtr(float *data) { setDataPtr<float>(data); }
+	virtual void DLLCALLCONV setDataStringIdPtr(int *id) { setDataPtr<int>(id); }
+
 	virtual char DLLCALLCONV getDataChar(int index) { return getData<char>(index); }
 	virtual short DLLCALLCONV getDataShort(int index) { return getData<short>(index); }
 	virtual int DLLCALLCONV getDataInt(int index) { return getData<int>(index); }
 	virtual float DLLCALLCONV getDataFloat(int index) { return getData<float>(index); }
-	inline virtual const char* DLLCALLCONV getDataString(int index);
+	virtual inline const char* DLLCALLCONV getDataString(int index);
 	virtual int DLLCALLCONV getDataStringId(int index) { return getData<int>(index); }
 
-	virtual char * DLLCALLCONV getDataCharPtr() { return getDataPtr<char*>(); }
-	virtual short * DLLCALLCONV getDataShortPtr() { return getDataPtr<short*>(); }
-	virtual int * DLLCALLCONV getDataIntPtr() { return getDataPtr<int*>(); }
-	virtual float * DLLCALLCONV getDataFloatPtr() { return getDataPtr<float*>(); }
-	virtual int * DLLCALLCONV getDataStringIdPtr() { return getDataPtr<int*>(); }
+	virtual char * DLLCALLCONV getDataCharPtr() { return getDataPtr<char>(); }
+	virtual short * DLLCALLCONV getDataShortPtr() { return getDataPtr<short>(); }
+	virtual int * DLLCALLCONV getDataIntPtr() { return getDataPtr<int>(); }
+	virtual float * DLLCALLCONV getDataFloatPtr() { return getDataPtr<float>(); }
+	virtual int * DLLCALLCONV getDataStringIdPtr() { return getDataPtr<int>(); }
 
-
-	virtual ElementType DLLCALLCONV getType();
-	virtual const char* DLLCALLCONV getName();
-
-	void dumpToStdout();
-
+protected:
+	bool checkIndexType(int type, int index);
 
 private:
 	TmlBlock *fieldInfo;
@@ -96,21 +105,7 @@ private:
 	int templateId;
 };
 
-
-template<typename T> T BtrfBlock::getData(int index) {
-	if(index >= numElement) {
-		std::cerr << "Index too large for data " << getName() << " index " << index << " / " << numElement << '\n';
-		::exit(-2);
-	}
-	return static_cast<T*>(data)[index];
-}
-
-template<>
-const char * BtrfBlock::getData<const char*>(int index);
-
-template<typename T> T BtrfBlock::getDataPtr() {
-	return static_cast<T>(data);
-}
+template<> const char * BtrfBlock::getData<const char*>(int index);
 
 const char* DLLCALLCONV BtrfBlock::getDataString(int index) { return getData<const char*>(index); }
 

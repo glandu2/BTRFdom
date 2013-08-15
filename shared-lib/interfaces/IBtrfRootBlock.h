@@ -31,13 +31,13 @@ class ITmlFile;
 static const Guid IID_IBtrfRootBlock =
 { 0xc506d3cf, 0x7636, 0x414d, { 0xb5, 0x54, 0x51, 0x9c, 0xd7, 0x8b, 0x24, 0x1 } };
 
-class IBtrfRootBlock : public CImplement<IObject>
+class IBtrfRootBlock : public IObject
 {
 public:
-	virtual void DLLCALLCONV addString(const char* str) = 0;
+	virtual int DLLCALLCONV addString(const char* str) = 0;
 	virtual const char * DLLCALLCONV getString(int index) = 0;
 
-	virtual void DLLCALLCONV addTemplate(const TemplateGuid& guid, int usedField) = 0;
+	virtual int DLLCALLCONV addTemplate(const TemplateGuid& guid, int usedField) = 0;
 	virtual const TemplateGuid& DLLCALLCONV getTemplateGuid(int index) = 0;
 	virtual int DLLCALLCONV getTemplateUsedField(int index) = 0;
 	virtual int DLLCALLCONV getStringNum() = 0;
@@ -45,7 +45,7 @@ public:
 
 	virtual ITmlFile * DLLCALLCONV getTmlFile() = 0;
 
-	virtual void DLLCALLCONV addBlock(IBtrfBlock *block) = 0;
+	virtual int DLLCALLCONV addBlock(IBtrfBlock *block) = 0;
 	virtual IBtrfBlock * DLLCALLCONV getBlockByGuid(const TemplateGuid& guid) = 0;
 	virtual IBtrfBlock * DLLCALLCONV getBlockById(int id) = 0;
 	virtual int DLLCALLCONV getBlockNum() = 0;

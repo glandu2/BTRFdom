@@ -30,6 +30,18 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
+#pragma comment(linker, "/export:deleteObject=_deleteObject@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV deleteObject(IObject *fieldInfo) {
+	fieldInfo->destroy();
+}
+
+
+///////////////////////////////////////////
+// BtrfBlock
+///////////////////////////////////////////
+
+#ifdef _MSC_VER
 #pragma comment(linker, "/export:setElementNumberBtrfBlock=_setElementNumberBtrfBlock@8")
 #endif
 DLLEXPORT_BTRF void DLLCALLCONV setElementNumberBtrfBlock(IBtrfBlock *self, int num) {
@@ -48,6 +60,20 @@ DLLEXPORT_BTRF void DLLCALLCONV setTemplateIdBtrfBlock(IBtrfBlock *self, int id)
 #endif
 DLLEXPORT_BTRF ITmlBlock * DLLCALLCONV getFieldInfoBtrfBlock(IBtrfBlock *self) {
 	return self->getFieldInfo();
+}
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTypeBtrfBlock=_getTypeBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF ElementType DLLCALLCONV getTypeBtrfBlock(IBtrfBlock *self) {
+	return self->getType();
+}
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getNameBtrfBlock=_getNameBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF const char* DLLCALLCONV getNameBtrfBlock(IBtrfBlock *self) {
+	return self->getName();
 }
 
 #ifdef _MSC_VER
@@ -71,59 +97,95 @@ DLLEXPORT_BTRF const TemplateGuid* DLLCALLCONV getTemplateGuidBtrfBlock(IBtrfBlo
 	return &self->getTemplateGuid();
 }
 
-//Copy memory
-//String take a array of index to strings (int [])
-//set num = 0 to use Block's numElement value
-#ifdef _MSC_VER
-#pragma comment(linker, "/export:setDataBtrfBlock=_setDataBtrfBlock@12")
-#endif
-DLLEXPORT_BTRF void DLLCALLCONV setDataBtrfBlock(IBtrfBlock *self, ElementType dataType, int num) {
-	self->setData(dataType, num);
+
+//addBlock & getBlock
+
+DLLEXPORT_BTRF int DLLCALLCONV addBlockBtrfBlock(IBtrfBlock *self, IBtrfBlock *other) {
+	return self->addBlock(other);
 }
 
-#ifdef _MSC_VER
-#pragma comment(linker, "/export:setDataContentBtrfBlock=_setDataContentBtrfBlock@16")
-#endif
-DLLEXPORT_BTRF void DLLCALLCONV setDataContentBtrfBlock(IBtrfBlock *self, ElementType dataType, int num, void *data) {
-	self->setData(dataType, num, data);
-}
-
-#ifdef _MSC_VER
-#pragma comment(linker, "/export:freeDataBtrfBlock=_freeDataBtrfBlock@4")
-#endif
-DLLEXPORT_BTRF void DLLCALLCONV freeDataBtrfBlock(IBtrfBlock *self) {
-	self->freeData();
-}
-
-//Use a pointer and don't copy memory (in case of memory mapped file for example)
-//set num = 0 to use Block's numElement value
-#ifdef _MSC_VER
-#pragma comment(linker, "/export:setDataPtrBtrfBlock=_setDataPtrBtrfBlock@16")
-#endif
-DLLEXPORT_BTRF void DLLCALLCONV setDataPtrBtrfBlock(IBtrfBlock *self, ElementType dataType, void *data, int num) {
-	self->setDataPtr(dataType, data, num);
-}
-
-#ifdef _MSC_VER
-#pragma comment(linker, "/export:getDataBtrfBlock=_getDataBtrfBlock@8")
-#endif
-DLLEXPORT_BTRF const void * DLLCALLCONV getDataBtrfBlock(IBtrfBlock *self, int index) {
-	return self->getData(index);
-}
-
-#ifdef _MSC_VER
-#pragma comment(linker, "/export:getDataPtrBtrfBlock=_getDataPtrBtrfBlock@4")
-#endif
-DLLEXPORT_BTRF void * DLLCALLCONV getDataPtrBtrfBlock(IBtrfBlock *self) {
-	return self->getDataPtr();
-}
-
-#ifdef _MSC_VER
-#pragma comment(linker, "/export:getBlockBtrfBlock=_getBlockBtrfBlock@8")
-#endif
 DLLEXPORT_BTRF IBtrfBlock* DLLCALLCONV getBlockBtrfBlock(IBtrfBlock *self, int index) {
 	return self->getBlock(index);
 }
+
+
+//setData*()
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTemplateGuidBtrfBlock=_getTemplateGuidBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV setDataCharBtrfBlock(IBtrfBlock *self, int index, char data) {
+	self->setDataChar(index, data);
+}
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTemplateGuidBtrfBlock=_getTemplateGuidBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV setDataShortBtrfBlock(IBtrfBlock *self, int index, short data) {
+	self->setDataShort(index, data);
+}
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTemplateGuidBtrfBlock=_getTemplateGuidBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV setDataIntBtrfBlock(IBtrfBlock *self, int index, int data) {
+	self->setDataInt(index, data);
+}
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTemplateGuidBtrfBlock=_getTemplateGuidBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV setDataFloatBtrfBlock(IBtrfBlock *self, int index, float data) {
+	self->setDataFloat(index, data);
+}
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTemplateGuidBtrfBlock=_getTemplateGuidBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV setDataStringIdBtrfBlock(IBtrfBlock *self, int index, int id) {
+	self->setDataStringId(index, id);
+}
+
+
+//setData*Ptr()
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTemplateGuidBtrfBlock=_getTemplateGuidBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV setDataCharPtrBtrfBlock(IBtrfBlock *self, char *data) {
+	self->setDataCharPtr(data);
+}
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTemplateGuidBtrfBlock=_getTemplateGuidBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV setDataShortPtrBtrfBlock(IBtrfBlock *self, short *data) {
+	self->setDataShortPtr(data);
+}
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTemplateGuidBtrfBlock=_getTemplateGuidBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV setDataIntPtrBtrfBlock(IBtrfBlock *self, int *data) {
+	self->setDataIntPtr(data);
+}
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTemplateGuidBtrfBlock=_getTemplateGuidBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV setDataFloatPtrBtrfBlock(IBtrfBlock *self, float *data) {
+	self->setDataFloatPtr(data);
+}
+
+#ifdef _MSC_VER
+#pragma comment(linker, "/export:getTemplateGuidBtrfBlock=_getTemplateGuidBtrfBlock@4")
+#endif
+DLLEXPORT_BTRF void DLLCALLCONV setDataStringIdPtrBtrfBlock(IBtrfBlock *self, int *id) {
+	self->setDataStringIdPtr(id);
+}
+
+
+//getData*()
 
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:getDataCharBtrfBlock=_getDataCharBtrfBlock@8")
@@ -167,6 +229,9 @@ DLLEXPORT_BTRF int DLLCALLCONV getDataStringIdBtrfBlock(IBtrfBlock *self, int in
 	return self->getDataStringId(index);
 }
 
+
+//getData*Ptr()
+
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:getDataCharPtrBtrfBlock=_getDataCharPtrBtrfBlock@4")
 #endif
@@ -202,20 +267,8 @@ DLLEXPORT_BTRF int * DLLCALLCONV getDataStringIdPtrBtrfBlock(IBtrfBlock *self) {
 	return self->getDataStringIdPtr();
 }
 
-#ifdef _MSC_VER
-#pragma comment(linker, "/export:getTypeBtrfBlock=_getTypeBtrfBlock@4")
-#endif
-DLLEXPORT_BTRF ElementType DLLCALLCONV getTypeBtrfBlock(IBtrfBlock *self) {
-	return self->getType();
-}
-
-#ifdef _MSC_VER
-#pragma comment(linker, "/export:getNameBtrfBlock=_getNameBtrfBlock@4")
-#endif
-DLLEXPORT_BTRF const char* DLLCALLCONV getNameBtrfBlock(IBtrfBlock *self) {
-	return self->getName();
-}
-
+///////////////////////////////////////////
+// BtrfParser
 ///////////////////////////////////////////
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:readFileBtrfParser=_readFileBtrfParser@8")
@@ -232,11 +285,13 @@ DLLEXPORT_BTRF void DLLCALLCONV writeFileBtrfParser(IBtrfParser *self, const cha
 }
 
 ///////////////////////////////////////////
+// BtrfRootBlock
+///////////////////////////////////////////
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:addStringBtrfRootBlock=_addStringBtrfRootBlock@8")
 #endif
-DLLEXPORT_BTRF void DLLCALLCONV addStringBtrfRootBlock(IBtrfRootBlock *self, const char* str) {
-	self->addString(str);
+DLLEXPORT_BTRF int DLLCALLCONV addStringBtrfRootBlock(IBtrfRootBlock *self, const char* str) {
+	return self->addString(str);
 }
 
 #ifdef _MSC_VER
@@ -249,8 +304,8 @@ DLLEXPORT_BTRF const char * DLLCALLCONV getStringBtrfRootBlock(IBtrfRootBlock *s
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:addTemplateBtrfRootBlock=_addTemplateBtrfRootBlock@12")
 #endif
-DLLEXPORT_BTRF void DLLCALLCONV addTemplateBtrfRootBlock(IBtrfRootBlock *self, const TemplateGuid* guid, int usedField) {
-	self->addTemplate(*guid, usedField);
+DLLEXPORT_BTRF int DLLCALLCONV addTemplateBtrfRootBlock(IBtrfRootBlock *self, const TemplateGuid* guid, int usedField) {
+	return self->addTemplate(*guid, usedField);
 }
 
 #ifdef _MSC_VER
@@ -291,8 +346,8 @@ DLLEXPORT_BTRF ITmlFile * DLLCALLCONV getTmlFileBtrfRootBlock(IBtrfRootBlock *se
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:addBlockBtrfRootBlock=_addBlockBtrfRootBlock@8")
 #endif
-DLLEXPORT_BTRF void DLLCALLCONV addBlockBtrfRootBlock(IBtrfRootBlock *self, IBtrfBlock *block) {
-	self->addBlock(block);
+DLLEXPORT_BTRF int DLLCALLCONV addBlockBtrfRootBlock(IBtrfRootBlock *self, IBtrfBlock *block) {
+	return self->addBlock(block);
 }
 
 #ifdef _MSC_VER
@@ -324,13 +379,8 @@ DLLEXPORT_BTRF void DLLCALLCONV dumpToStdoutBtrfRootBlock(IBtrfRootBlock *self) 
 }
 
 ///////////////////////////////////////////
-#ifdef _MSC_VER
-#pragma comment(linker, "/export:getIsValidTmlBlock=_getIsValidTmlBlock@4")
-#endif
-DLLEXPORT_BTRF bool DLLCALLCONV getIsValidTmlBlock(ITmlBlock *self) {
-	return self->getIsValid();
-}
-
+// TmlBlock
+///////////////////////////////////////////
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:getTemplateGuidTmlBlock=_getTemplateGuidTmlBlock@4")
 #endif
@@ -380,6 +430,8 @@ DLLEXPORT_BTRF bool DLLCALLCONV getHasVariableSizeTmlBlock(ITmlBlock *self) {
 	return self->getHasVariableSize();
 }
 
+///////////////////////////////////////////
+// TmlFile
 ///////////////////////////////////////////
 #ifdef _MSC_VER
 #pragma comment(linker, "/export:parseFileTmlFile=_parseFileTmlFile@8")

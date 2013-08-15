@@ -26,7 +26,7 @@
 #include "ITmlFile.h"
 #include "TmlBlock.h"
 
-class TmlFile : public ITmlFile
+class TmlFile : public CImplement<ITmlFile>
 {
 	public:
 		TmlFile();

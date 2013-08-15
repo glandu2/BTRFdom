@@ -31,7 +31,7 @@ class TmlFile;
 class TmlBlock;
 class BtrfBlock;
 
-class BtrfParser : public IBtrfParser
+class BtrfParser : public CImplement<IBtrfParser>
 {
 public:
 	BtrfParser(TmlFile *tmlData) : tmlData(tmlData) {}

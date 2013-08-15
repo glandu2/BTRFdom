@@ -22,55 +22,84 @@
 #include <stdlib.h>
 #include "TmlBlock.h"
 #include "BtrfRootBlock.h"
+#include <deque>
 
-void BtrfBlock::setData(ElementType dataType, int num, void *data) {
-	if(num)
-		numElement = num;
+template<typename T> struct TypeValue{ enum { MemberType = ET_None }; };
+template<> struct TypeValue<char> { enum { MemberType = ET_Char }; };
+template<> struct TypeValue<short> { enum { MemberType = ET_Word }; };
+template<> struct TypeValue<int> { enum { MemberType = ET_DWord }; };
+template<> struct TypeValue<float> { enum { MemberType = ET_Float }; };
 
-	if(dataType != fieldInfo->getType()) {
-		fprintf(stderr, "FATAL ! Type is not the same as template file: set %d instead of %d\n", dataType, fieldInfo->getType());
-		abort();
-	}
+
+BtrfBlock::BtrfBlock(TmlBlock *fieldInfo, BtrfRootBlock *rootBlock)
+	: fieldInfo(fieldInfo),
+	  rootBlock(rootBlock),
+	  data(nullptr),
+	  allocatedData(false),
+	  templateId(-1)
+{
+	if(fieldInfo->getHasVariableSize() == false)
+		numElement = fieldInfo->getFieldCount();
+	else
+		numElement = 0;
+
+	initData();
+}
+
+BtrfBlock::~BtrfBlock()
+{
+	freeData();
+}
+
+void BtrfBlock::initData() {
+//	if(dataType != fieldInfo->getType()) {
+//		fprintf(stderr, "FATAL ! Type is not the same as template file: set %d instead of %d\n", dataType, fieldInfo->getType());
+//		abort();
+//	}
 
 	freeData();
 
-	switch(dataType) {
+	switch(fieldInfo->getType()) {
 	case ET_TemplateArray:
 	case ET_Template:
-		this->data = new BtrfBlock[numElement];
+		this->data = new std::deque<BtrfBlock*>();
 		this->allocatedData = true;
 		break;
 
 	case ET_Char:
 	case ET_UChar:
-		this->data = new char[numElement];
-		this->allocatedData = true;
-		memcpy(this->data, data, sizeof(char) * numElement);
+		if(numElement) {
+			this->data = new char[numElement];
+			this->allocatedData = true;
+		}
 		break;
 
 	case ET_Word:
-		this->data = new short[numElement];
-		this->allocatedData = true;
-		memcpy(this->data, data, sizeof(short) * numElement);
+		if(numElement) {
+			this->data = new short[numElement];
+			this->allocatedData = true;
+		}
 		break;
 
 	case ET_DWord:
-		this->data = new int[numElement];
-		this->allocatedData = true;
-		memcpy(this->data, data, sizeof(int) * numElement);
+		if(numElement) {
+			this->data = new int[numElement];
+			this->allocatedData = true;
+		}
 		break;
 
 	case ET_Float:
-		this->data = new float[numElement];
-		this->allocatedData = true;
-		memcpy(this->data, data, sizeof(float) * numElement);
+		if(numElement) {
+			this->data = new float[numElement];
+			this->allocatedData = true;
+		}
 		break;
 
 	case ET_String:
-		this->data = new int[numElement];
-		this->allocatedData = true;
-		if(data)
-			memcpy(this->data, data, sizeof(int) * numElement);
+		if(numElement) {
+			this->data = new int[numElement];
+			this->allocatedData = true;
+		}
 		break;
 
 	case ET_Array:
@@ -79,47 +108,6 @@ void BtrfBlock::setData(ElementType dataType, int num, void *data) {
 		this->allocatedData = false;
 		break;
 	}
-}
-
-void BtrfBlock::setDataPtr(ElementType dataType, void *data, int num) {
-	if(num)
-		numElement = num;
-
-	assert(dataType == fieldInfo->getType());
-
-	freeData();
-
-	switch(dataType) {
-	case ET_TemplateArray:
-	case ET_Template:
-		this->data = new BtrfBlock[numElement];
-		this->allocatedData = true;
-		break;
-
-	case ET_Char:
-	case ET_UChar:
-	case ET_Word:
-	case ET_DWord:
-	case ET_Float:
-	case ET_String:
-		this->data = data;
-		this->allocatedData = false;
-		break;
-
-	case ET_Array:
-	case ET_None:
-		this->data = nullptr;
-		this->allocatedData = false;
-		break;
-	}
-}
-
-BtrfBlock* BtrfBlock::getBlock(int index) {
-	if(index >= numElement) {
-		std::cerr << "Index too large for member " << getName() << " index " << index << " / " << numElement << '\n';
-		exit(-2);
-	}
-	return static_cast<BtrfBlock*>(data) + index;
 }
 
 void BtrfBlock::freeData() {
@@ -127,7 +115,7 @@ void BtrfBlock::freeData() {
 		switch(fieldInfo->getType()) {
 		case ET_TemplateArray:
 		case ET_Template:
-			delete[] reinterpret_cast<BtrfBlock*>(data);
+			delete reinterpret_cast<std::deque<BtrfBlock*>*>(data);
 			allocatedData = false;
 			break;
 
@@ -161,10 +149,75 @@ void BtrfBlock::freeData() {
 		case ET_None:
 			break;
 		}
-
-		if(allocatedData == false)
-			data = nullptr;
 	}
+
+	if(allocatedData == false)
+		data = nullptr;
+}
+
+void DLLCALLCONV BtrfBlock::setElementNumber(int num) {
+	freeData();
+	numElement = num;
+	initData();
+}
+
+template<typename T> void BtrfBlock::setData(int index, T data) {
+	checkIndexType(TypeValue<T>::MemberType, index);
+	getDataPtr<T>()[index] = data;
+}
+
+template<typename T> T BtrfBlock::getData(int index) {
+	checkIndexType(TypeValue<T>::MemberType, index);
+	return getDataPtr<T>()[index];
+}
+
+template<> const char * BtrfBlock::getData<const char*>(int index) {
+	checkIndexType(ET_String, index);
+
+	int id = static_cast<int*>(data)[index];
+	if(id != -1)
+		return rootBlock->getString(id);
+	else
+		return nullptr;
+}
+
+template<typename T> void BtrfBlock::setDataPtr(T* data) {
+	freeData();
+	checkIndexType(TypeValue<T>::MemberType, -1);
+	this->data = data;
+}
+
+template<typename T> T* BtrfBlock::getDataPtr() {
+	return static_cast<T*>(data);
+}
+
+int BtrfBlock::addBlock(IBtrfBlock *block) {
+	checkIndexType(ET_Template, -1);
+
+	reinterpret_cast<std::deque<BtrfBlock*>*>(data)->push_back(static_cast<BtrfBlock*>(block));
+	numElement = reinterpret_cast<std::deque<BtrfBlock*>*>(data)->size();
+	return numElement - 1;
+}
+
+BtrfBlock* BtrfBlock::getBlock(int index) {
+	checkIndexType(ET_Template, index);
+	return reinterpret_cast<std::deque<BtrfBlock*>*>(data)->at(index);
+}
+
+bool BtrfBlock::checkIndexType(int type, int index) {
+	if(getType() != type &&
+			!(type == ET_Template && getType() == ET_TemplateArray) &&
+			!(type == ET_TemplateArray && getType() == ET_Template) &&
+			!(type == ET_DWord && getType() == ET_String))
+	{
+		std::cerr << "Warning: attempting to get wrong type to block ! requested type was " << type << " but block is of type " << getType() << '\n';
+	}
+	if(index >= numElement) {
+		std::cerr << "Index too large for member " << getName() << " index " << index + 1 << " / " << numElement << '\n';
+		exit(-2);
+		return false;
+	}
+	return true;
 }
 
 const TemplateGuid& BtrfBlock::getTemplateGuid() {
@@ -172,66 +225,6 @@ const TemplateGuid& BtrfBlock::getTemplateGuid() {
 		return rootBlock->getTemplateGuid(templateId);
 	else
 		return fieldInfo->getTemplateGuid();
-}
-
-ElementType BtrfBlock::getType() {
-	return fieldInfo->getType();
-}
-const char* BtrfBlock::getName() {
-	return fieldInfo->getName();
-}
-
-const void * BtrfBlock::getData(int index) {
-	if(allocatedData) {
-		switch(fieldInfo->getType()) {
-		case ET_TemplateArray:
-		case ET_Template:
-			return reinterpret_cast<BtrfBlock*>(data) + index;
-			break;
-
-		case ET_Char:
-		case ET_UChar:
-			return reinterpret_cast<char*>(data) + index;
-			break;
-
-		case ET_Word:
-			return reinterpret_cast<short*>(data) + index;
-			break;
-
-		case ET_DWord:
-			return reinterpret_cast<int*>(data) + index;
-			break;
-
-		case ET_Float:
-			return reinterpret_cast<float*>(data) + index;
-			break;
-
-		case ET_String:
-			if(reinterpret_cast<int*>(data)[index] != -1)
-				return rootBlock->getString(reinterpret_cast<int*>(data)[index]);
-			else return nullptr;
-			break;
-
-		case ET_Array:
-		case ET_None:
-			break;
-		}
-	}
-
-	return nullptr;
-}
-
-template<>
-const char * BtrfBlock::getData<const char*>(int index) {
-   if(index >= numElement) {
-	   std::cerr << "Index too large for data " << getName() << " index " << index << " / " << numElement << '\n';
-	   ::exit(-2);
-   }
-   int id = static_cast<int*>(data)[index];
-   if(id != -1)
-	   return rootBlock->getString(id);
-   else
-	   return nullptr;
 }
 
 void BtrfBlock::dumpToStdout() {
@@ -244,38 +237,38 @@ void BtrfBlock::dumpToStdout() {
 	case ET_Char:
 		std::cout << "Char " << getName() << "[" << numElement << "] = ";
 		for(i=0; i<numElement; i++)
-			std::cout << (int)static_cast<char*>(data)[i] << ", ";
+			std::cout << (int)getDataChar(i) << ", ";
 		break;
 
 	case ET_UChar:
 		std::cout << "UChar " << getName() << "[" << numElement << "] = ";
 		for(i=0; i<numElement; i++)
-			std::cout << (unsigned int)static_cast<unsigned char*>(data)[i] << ", ";
+			std::cout << (unsigned int)getDataChar(i) << ", ";
 		break;
 
 	case ET_Word:
 		std::cout << "Word " << getName() << "[" << numElement << "] = ";
 		for(i=0; i<numElement; i++)
-			std::cout << static_cast<short*>(data)[i] << ", ";
+			std::cout << getDataShort(i) << ", ";
 		break;
 
 	case ET_DWord:
 		std::cout << "DWord " << getName() << "[" << numElement << "] = ";
 		for(i=0; i<numElement; i++)
-			std::cout << static_cast<int*>(data)[i] << ", ";
+			std::cout << getDataInt(i) << ", ";
 		break;
 
 	case ET_Float:
 		std::cout << "Float " << getName() << "[" << numElement << "] = " << std::setprecision(5);
 		for(i=0; i<numElement; i++)
-			std::cout << static_cast<float*>(data)[i] << ", ";
+			std::cout << getDataFloat(i) << ", ";
 		break;
 
 	case ET_String:
 		std::cout << "String " << getName() << "[" << numElement << "] = \n{\n";
 		for(i=0; i<numElement; i++) {
-			if(getData<const char*>(i))
-				std::cout << getData<const char*>(i) << '\n';
+			if(getDataString(i))
+				std::cout << getDataString(i) << '\n';
 			else std::cout << "<NULL>\n";
 		}
 		std::cout << "}";
@@ -290,7 +283,7 @@ void BtrfBlock::dumpToStdout() {
 					 (unsigned int)templateGuid->Data4[3] << (unsigned int)templateGuid->Data4[4] << (unsigned int)templateGuid->Data4[5] <<
 					 (unsigned int)templateGuid->Data4[6] << (unsigned int)templateGuid->Data4[7] << std::dec << " " << getName() << ", " << numElement << " subfields\n{\n";
 		for(i=0; i<numElement; i++)
-			static_cast<BtrfBlock*>(data)[i].dumpToStdout();
+			getBlock(i)->dumpToStdout();
 		std::cout << "}";
 		break;
 	}
@@ -298,7 +291,7 @@ void BtrfBlock::dumpToStdout() {
 	case ET_TemplateArray:
 		std::cout << "Template array " << getName() << "[" << numElement << "] = \n{\n";
 		for(i=0; i<numElement; i++)
-			static_cast<BtrfBlock*>(data)[i].dumpToStdout();
+			getBlock(i)->dumpToStdout();
 		std::cout << "}";
 		break;
 
