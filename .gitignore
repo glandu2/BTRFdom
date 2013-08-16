@@ -16,6 +16,9 @@ obj*/
 *.so*
 CMakeLists.txt.*
 
+#python
+__pycache__
+
 #Temp files
 *~
 *.bak
