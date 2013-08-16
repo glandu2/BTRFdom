@@ -25,6 +25,9 @@
 extern "C" {
 #endif
 
+#if defined(_MSC_VER) && !defined(_WIN64)
+#pragma comment(linker, "/export:createTmlBlock=_createTmlBlock@0")
+#endif
 DLLEXPORT_BTRF ITmlBlock * DLLCALLCONV createTmlBlock() {
 	return new TmlBlock;
 }

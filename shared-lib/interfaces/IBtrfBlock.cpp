@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(_WIN64)
 #pragma comment(linker, "/export:createBtrfBlock=_createBtrfBlock@8")
 #endif
 DLLEXPORT_BTRF IBtrfBlock * DLLCALLCONV createBtrfBlock(ITmlBlock *fieldInfo, IBtrfRootBlock *rootBlock) {

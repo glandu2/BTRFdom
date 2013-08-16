@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(_WIN64)
 #pragma comment(linker, "/export:createBtrfParser=_createBtrfParser@4")
 #endif
 DLLEXPORT_BTRF IBtrfParser * DLLCALLCONV createBtrfParser(ITmlFile *tmlFile) {

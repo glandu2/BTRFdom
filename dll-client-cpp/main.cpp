@@ -876,7 +876,7 @@ void parseFunc(IBtrfRootBlock* rootBlock, IBtrfRootBlock* animRootBlock, FILE* f
 						mesh.boneVerticesAssociation[vertexIndex].push_back(assoc);
 					}
 				}
-				model.boneTransformMatrix.resize(std::max(k, (int)model.boneTransformMatrix.size()));
+				model.boneTransformMatrix.resize(k);
 
 				mesh.transformMatrix = meshData->getBlock(6)->getDataFloatPtr();
 
