@@ -20,11 +20,19 @@
 
 # This python script create a basic BTRF file
 
-from ctypes import windll, c_float
+import sys
+
+if sys.platform == 'win32':
+	from ctypes import windll
+	btrfdll = windll.LoadLibrary("./BTRFdom")
+else:
+	from ctypes import cdll
+	btrfdll = cdll.LoadLibrary("./BTRFdom.so")
+
+from ctypes import c_float
 import uuid
 
 #Load the BTRFdom dll (or so on linux)
-btrfdll = windll.LoadLibrary("./BTRFdom")
 
 #Create a TmlFile object that will contain all known templates and their fields
 tmlFile = btrfdll.createTmlFile()
