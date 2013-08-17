@@ -196,6 +196,7 @@ bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
 						for(it = subfields.begin(); it != itEnd; ++it) {
 							if(!strcmp((*it)->name.c_str(), p1)) {
 								subfields.erase(it);
+								numElement--;
 								break;
 							}
 						}

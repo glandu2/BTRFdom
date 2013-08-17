@@ -215,8 +215,13 @@ int BtrfBlock::addBlock(IBtrfBlock *block) {
 				break;
 			}
 		}
+		int usedField;
+		if(block->getElementNumber() > 0) {
+			usedField = block->getBlock(0)->getElementNumber();
+		} else usedField = block->getFieldInfo()->getField(0)->getFieldCount();
+
 		if(block->getTemplateId() == -1)
-			block->setTemplateId(rootBlock->addTemplate(block->getFieldInfo()->getField(0)->getTemplateGuid(), block->getElementNumber()));
+			block->setTemplateId(rootBlock->addTemplate(block->getFieldInfo()->getField(0)->getTemplateGuid(), usedField));
 	}
 
 	reinterpret_cast<std::deque<BtrfBlock*>*>(data)->push_back(static_cast<BtrfBlock*>(block));

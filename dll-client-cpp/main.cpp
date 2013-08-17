@@ -533,7 +533,7 @@ void writeCollada(const Model& model, FILE* file) {
 				std::list<VertexBoneAssociation>::const_iterator vertexIt, vertexItEnd;
 
 				for(vertexIt = vertexInfo.cbegin(), vertexItEnd = vertexInfo.cend(); vertexIt != vertexItEnd; ++vertexIt) {
-					fprintf(file, "%d %d\n", vertexIt->boneIndex, vertexWeightIndex++);
+					fprintf(file, "%d %d ", vertexIt->boneIndex, vertexWeightIndex++);
 				}
 			}
 			fprintf(file, "</v>\n"
