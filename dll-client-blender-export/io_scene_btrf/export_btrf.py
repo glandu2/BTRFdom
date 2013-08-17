@@ -19,7 +19,7 @@
 #
 
 import bpy
-from ctypes import windll, c_float
+from ctypes import windll, c_float, c_int
 import uuid
 
 nx3_version_header_guid = uuid.UUID('{81BCE021-AD76-346f-9C7D-19885FD118B6}')
@@ -33,6 +33,7 @@ nx3_new_mesh_guid = uuid.UUID('{1718DC1B-1DB1-458a-9C7E-C3D46FC4585B}')
 nx3_mesh_block_guid = uuid.UUID('{C817F7B0-E4E7-40fb-97B3-2B97CC000521}')
 nx3_mesh_frame_guid = uuid.UUID('{1C77954B-CDD5-4615-B7AD-F23BD3D0C23E}')
 nx3_weight_frame_guid = uuid.UUID('{B513DF30-80BE-44f4-980B-84B9D979A607}')
+nx3_mesh_tm_guid = uuid.UUID('{F09C560E-7328-411e-87A3-EEB165D5F929}')
 
 """
 NX3 structure:
@@ -61,11 +62,90 @@ template nx3_mtl_header {
 		}
 	}
 }
+template nx3_new_mesh_header {
+	dword			mesh_size;
+	nx3_new_mesh    mesh_array[mesh_size] {	
+		string			mesh_name;
+
+		dword			material_id;
+		dword			channel_id;
+
+		dword			mesh_block_size;
+		nx3_mesh_block	mesh_block_array[mesh_block_size] {
+			dword			texture_index;	
+			
+			dword			mesh_frame_size;
+			nx3_mesh_frame	mesh_frame_array[mesh_frame_size] {
+				dword   time_value;
+
+				dword	vertex_size;
+				float	vertex_array[vertex_size];
+				
+				dword	normal_size;
+				float	normal_array[normal_size];
+
+				dword	texel_size;
+				float	texel_array[texel_size];
+				
+				dword	color_size;
+				dword	color_array[color_size];
+
+				dword				bone_size;
+				nx3_weight_frame	bone_block[bone_size] {
+					string  bone_name;
+					dword	weight_size;
+					float	weight_array[weight_size];
+					dword	offset_vector_size;
+					float   offset_vector_array[offset_vector_size];	
+				}
+				
+				float	mesh_tm[16];	
+			}
+
+			dword			index_buffer_size;
+			word			index_buffer_array[index_buffer_size];
+			
+			//Not used
+			dword			lightmap_index;
+		}
+		
+		dword			ani_time_size;
+		dword			ani_time_array[ani_time_size];
+		dword			ani_matrix_size;
+		float			ani_matrix_array[ani_matrix_size];
+		
+		dword			visi_time_size;
+		dword			visi_time_array[visi_time_size];
+		float			visi_value_array[visi_time_size];
+			
+		dword			fx_size;
+		nx3_fx			fx_array[fx_size];
+
+		dword			mesh_children_size;
+		nx3_new_mesh    mesh_children_array[mesh_children_size];
+	}
+	dword			mesh_tm_size;
+	nx3_mesh_tm		mesh_tm_array[mesh_tm_size] {
+		string		name;
+		float       tm[16];
+	}
+}
 """
+#bones: bpy.data.objects['Cube'].modifiers['Armature'].object.data.bones[...]
+#vertex_group: bpy.data.objects['Cube'].vertex_groups
+#vertices_num: len(bpy.data.objects['Cube'].data.vertices)
+#faces: bpy.data.objects['Cube'].data.polygons[...]
+#normals: bpy.data.objects['Cube'].data.polygons[0].normal
+#vertices: bpy.data.objects['Cube'].data.vertices[...].co
+#transform matrix: bpy.data.objects['Cube'].matrix_world
+#texture: bpy.data.objects['mechanic_butkadah3.0'].data.uv_textures[0].data[0].image.filepath
+#texture uv coords: bpy.data.objects['mechanic_butkadah3.0'].data.uv_layers['UVMap'].data[0].uv
+#texture_index: bpy.data.materials.find(bpy.data.objects['mechanic_butkadah3.0'].data.materials[0].name)
+#face indices: bpy.data.objects['Cube'].data.polygons[0].vertices[0..2]
 
 def get_ascii_str(input):
 	if(input == None):
-		return b"<null>"
+		return b"(null)"
 	else:
 		return input.encode('ascii')
 
@@ -76,7 +156,7 @@ def get_texture_filename(material):
 			texture = texture_slot.texture
 			if texture != None and texture.type == 'IMAGE':
 				return get_ascii_str(texture.image.filepath)
-	return b"<null>"
+	return b"(null)"
 	
 
 def load_btrfdom():
@@ -95,6 +175,7 @@ def load_btrfdom():
 	
 	return (btrfdll, tmlFile, rootBlock)
 
+#version
 def write_version(btrfdll, tmlFile, rootBlock):
 	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_version_header_guid.bytes_le)
 	
@@ -112,8 +193,9 @@ def write_version(btrfdll, tmlFile, rootBlock):
 
 
 #Create nx3_mtl_block
-def get_mtl_block(btrfdll, fieldInfo, rootBlock, material, id):
+def get_mtl_block(btrfdll, tmlFile, rootBlock, material, id):
 	#Create a block that will contain the data of the template
+	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_mtl_block_guid.bytes_le)
 	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
 	
 	mtl_name = get_ascii_str(material.name)
@@ -179,23 +261,17 @@ def get_mtl_block(btrfdll, fieldInfo, rootBlock, material, id):
 	
 	return block
 
-
-def get_mtl_data(btrfdll, fieldInfo, rootBlock):
+def get_mtl_data(btrfdll, tmlFile, rootBlock):
 	#Create a block that will contain the data of the template
+	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_mtl_guid.bytes_le)
 	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
-	
-	arrayFieldInfo = btrfdll.getFieldTmlBlock(fieldInfo, 0)
-	arrayBlock = btrfdll.createBtrfBlock(arrayFieldInfo, rootBlock)
 
-	subFieldInfo = btrfdll.getFieldTmlBlock(arrayFieldInfo, 0)
-
+	arrayBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
 	#iterate over all materials
-	id = 0
 	for mat in bpy.data.materials:
 		if mat != None:
-			subBlock = get_mtl_block(btrfdll, subFieldInfo, rootBlock, mat, id)
+			subBlock = get_mtl_block(btrfdll, tmlFile, rootBlock, mat, bpy.data.materials.find(mat.name))
 			btrfdll.addBlockBtrfBlock(arrayBlock, subBlock)
-			id = id + 1
 	
 	btrfdll.addBlockBtrfBlock(block, arrayBlock)
 	return block
@@ -205,15 +281,275 @@ def write_mtl_header(btrfdll, tmlFile, rootBlock):
 	
 	#Create a block that will contain the data of the template
 	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
-	
-	arrayFieldInfo = btrfdll.getFieldTmlBlock(fieldInfo, 0)
-	arrayBlock = btrfdll.createBtrfBlock(arrayFieldInfo, rootBlock)
-	
-	subFieldInfo = btrfdll.getFieldTmlBlock(arrayFieldInfo, 0)
-	subBlock = get_mtl_data(btrfdll, subFieldInfo, rootBlock)
 
+	arrayBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
+	subBlock = get_mtl_data(btrfdll, tmlFile, rootBlock)
 	btrfdll.addBlockBtrfBlock(arrayBlock, subBlock)
 	btrfdll.addBlockBtrfBlock(block, arrayBlock)
+	
+	btrfdll.addBlockBtrfRootBlock(rootBlock, block)
+
+#Meshes data
+def get_vertex_index_weight(vertex_group, vertices_num):
+	data = []
+	for index in range(vertices_num):
+		try:
+			weight = vertex_group.weight(index)
+			data.append(c_float(index))
+			data.append(c_float(weight))
+		except RuntimeError:
+			pass
+
+	return data
+
+def get_nx3_weight_frame(btrfdll, tmlFile, rootBlock, vertex_group, vertices_num):
+	#Create a block that will contain the data of the template
+	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_weight_frame_guid.bytes_le)
+	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
+	
+	weight_list = get_vertex_index_weight(vertex_group, vertices_num)
+	
+	bone_name = get_ascii_str(vertex_group.name)
+	weight_size = len(weight_list)
+	weight_array = weight_list
+	offset_vector_size = int(len(weight_list)/2*3)
+	#offset_vector_array = [0 for i in range(offset_vector_size)]
+
+	#string  bone_name
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
+	btrfdll.setDataStringBtrfBlock(subBlock, 0, bone_name)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+
+	#float  weight_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 1), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, weight_size)
+	for i in range(weight_size):
+		btrfdll.setDataFloatBtrfBlock(subBlock, i, weight_array[i])
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#float  offset_vector_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 2), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, offset_vector_size)
+	for i in range(offset_vector_size):
+		btrfdll.setDataFloatBtrfBlock(subBlock, i, 0)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	return block
+
+def get_nx3_mesh_frame(btrfdll, tmlFile, rootBlock, mesh, vertex_groups):
+	#Create a block that will contain the data of the template
+	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_mesh_frame_guid.bytes_le)
+	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
+
+	vertices_num = len(mesh.vertices)
+	
+	time_value = 0
+	vertex_array = [ coord for face in mesh.polygons for vertexId in face.vertices for coord in mesh.vertices[vertexId].co]
+	normal_array = [ coord for face in mesh.polygons for vertexId in face.vertices for coord in mesh.vertices[vertexId].normal]
+	texel_array = [ coord for uvface in mesh.tessface_uv_textures[0].data for uv in uvface.uv for coord in uv ]
+	color_array = []
+	
+	bone_block = [ get_nx3_weight_frame(btrfdll, tmlFile, rootBlock, vertex_group, vertices_num) for vertex_group in vertex_groups]
+	mesh_tm = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+
+	#dword  time_value
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
+	btrfdll.setDataIntBtrfBlock(subBlock, 0, time_value)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+
+	#float  vertex_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 1), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, len(vertex_array))
+	for i in range(len(vertex_array)):
+		btrfdll.setDataFloatBtrfBlock(subBlock, i, c_float(vertex_array[i]))
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+
+	#float  normal_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 2), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, len(normal_array))
+	for i in range(len(normal_array)):
+		btrfdll.setDataFloatBtrfBlock(subBlock, i, c_float(normal_array[i]))
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+
+	#float  texel_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 3), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, len(texel_array))
+	for i in range(len(texel_array)):
+		btrfdll.setDataFloatBtrfBlock(subBlock, i, c_float(texel_array[i]))
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+
+	#dword  color_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 4), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, len(color_array))
+	for i in range(len(color_array)):
+		btrfdll.setDataFloatBtrfBlock(subBlock, i, c_int(color_array[i]))
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+
+	#nx3_weight_frame  bone_block[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 5), rootBlock)
+	for bone in bone_block:
+		btrfdll.addBlockBtrfBlock(subBlock, bone)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+
+	#float  mesh_tm[16]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 6), rootBlock)
+	for i in range(16):
+		btrfdll.setDataFloatBtrfBlock(subBlock, i, c_float(mesh_tm[i]))
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	return block
+
+def get_nx3_mesh_block(btrfdll, tmlFile, rootBlock, object):
+	#Create a block that will contain the data of the template
+	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_mesh_block_guid.bytes_le)
+	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
+	
+	mesh = object.to_mesh(bpy.context.scene, True, 'PREVIEW')
+	vertex_groups = object.vertex_groups
+	
+	texture_index = bpy.data.materials.find(mesh.materials[0].name)
+	mesh_block = get_nx3_mesh_frame(btrfdll, tmlFile, rootBlock, mesh, vertex_groups)
+	index_buffer_array = range(len(mesh.polygons)*3)
+
+	#dword  texture_index
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
+	btrfdll.setDataIntBtrfBlock(subBlock, 0, texture_index)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#nx3_mesh_frame  mesh_frame_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 1), rootBlock)
+	btrfdll.addBlockBtrfBlock(subBlock, mesh_block)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#word  index_buffer_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 2), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, len(index_buffer_array))
+	for i in range(len(index_buffer_array)):
+		btrfdll.setDataShortBtrfBlock(subBlock, i, index_buffer_array[i])
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	return block
+	
+def get_nx3_new_mesh(btrfdll, tmlFile, rootBlock, object):
+	#Create a block that will contain the data of the template
+	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_new_mesh_guid.bytes_le)
+	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
+	
+	mesh_name = get_ascii_str(object.name)
+	material_id = 0
+	channel_id = 0
+	mesh_block_array = [get_nx3_mesh_block(btrfdll, tmlFile, rootBlock, object)]
+	ani_time_array = []
+	ani_matrix_array = []
+	visi_time_array = []
+	visi_value_array = []
+	fx_array = []
+	mesh_children_array = []
+
+	#string  mesh_name
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
+	btrfdll.setDataStringBtrfBlock(subBlock, 0, mesh_name)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#dword  material_id
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 1), rootBlock)
+	btrfdll.setDataIntBtrfBlock(subBlock, 0, material_id)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#dword  channel_id
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 2), rootBlock)
+	btrfdll.setDataIntBtrfBlock(subBlock, 0, channel_id)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#nx3_mesh_block  mesh_block_array
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 3), rootBlock)
+	for i in range(len(mesh_block_array)):
+		btrfdll.addBlockBtrfBlock(subBlock, mesh_block_array[i])
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#dword ani_time_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 4), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, len(ani_time_array))
+	for i in range(len(ani_time_array)):
+		btrfdll.setDataIntBtrfBlock(subBlock, i, c_int(ani_time_array[i]))
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#float ani_matrix_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 5), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, len(ani_matrix_array))
+	for i in range(len(ani_matrix_array)):
+		btrfdll.setDataFloatBtrfBlock(subBlock, i, c_float(ani_matrix_array[i]))
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#dword visi_time_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 6), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, len(visi_time_array))
+	for i in range(len(visi_time_array)):
+		btrfdll.setDataIntBtrfBlock(subBlock, i, c_int(visi_time_array[i]))
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#float visi_value_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 7), rootBlock)
+	btrfdll.setElementNumberBtrfBlock(subBlock, len(visi_value_array))
+	for i in range(len(visi_value_array)):
+		btrfdll.setDataFloatBtrfBlock(subBlock, i, c_float(visi_value_array[i]))
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#nx3_fx fx_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 8), rootBlock)
+	#unsupported, nothing to add
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#nx3_new_mesh mesh_children_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 9), rootBlock)
+	#unsupported, nothing to add
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	return block
+
+def get_nx3_mesh_tm(btrfdll, tmlFile, rootBlock, bone):
+	#Create a block that will contain the data of the template
+	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_mesh_tm_guid.bytes_le)
+	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
+	
+	name = get_ascii_str(bone.name)
+	#TODO: check column-major / row-major ordering
+	tm = [ val for vector in bone.matrix_local for val in vector ]
+
+	#string  name
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
+	btrfdll.setDataStringBtrfBlock(subBlock, 0, name)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#float  tm[16]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 1), rootBlock)
+	for i in range(16):
+		btrfdll.setDataFloatBtrfBlock(subBlock, i, c_float(tm[i]))
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	return block
+
+def write_nx3_new_mesh_header(btrfdll, tmlFile, rootBlock):
+	#Create a block that will contain the data of the template
+	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_new_mesh_header_guid.bytes_le)
+	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
+	
+	objects = [object for object in bpy.data.objects if object.type == 'MESH']
+	
+	mesh_array = [get_nx3_new_mesh(btrfdll, tmlFile, rootBlock, object) for object in objects]
+	mesh_tm_array = [get_nx3_mesh_tm(btrfdll, tmlFile, rootBlock, bone) for armature in bpy.data.armatures for bone in armature.bones]
+
+	#nx3_new_mesh mesh_array[]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
+	for mesh in mesh_array:
+		btrfdll.addBlockBtrfBlock(subBlock, mesh)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	#float  tm[16]
+	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 1), rootBlock)
+	for mesh_tm in mesh_tm_array:
+		btrfdll.addBlockBtrfBlock(subBlock, mesh_tm)
+	btrfdll.addBlockBtrfBlock(block, subBlock)
 	
 	btrfdll.addBlockBtrfRootBlock(rootBlock, block)
 
@@ -223,6 +559,8 @@ def write(filename):
 
 	write_version(btrfdll, tmlFile, rootBlock)
 	write_mtl_header(btrfdll, tmlFile, rootBlock)
+	write_nx3_new_mesh_header(btrfdll, tmlFile, rootBlock)
 	
 	writter = btrfdll.createBtrfParser(tmlFile)
 	btrfdll.writeFileBtrfParser(writter, filename, rootBlock)
+	#btrfdll.dumpToStdoutBtrfRootBlock(rootBlock)
