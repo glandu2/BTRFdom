@@ -44,9 +44,9 @@ class ExportBTRF(bpy.types.Operator, ExportHelper):
 	filename_ext	= ".nx3";
 	
 	def execute(self, context):
-		from . import import_raw
-		import_raw.read(self.filepath)
-		return {'Finished'};
+		from . import export_btrf
+		export_btrf.write(self.filepath.encode('cp1252'))
+		return {'FINISHED'};
 
 def menu_func_export(self, context):
 	self.layout.operator(ExportBTRF.bl_idname, text="Rappelz NX3 (.nx3)")
