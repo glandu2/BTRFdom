@@ -38,7 +38,7 @@ BtrfBlock::BtrfBlock(TmlBlock *fieldInfo, BtrfRootBlock *rootBlock)
 	  allocatedData(false),
 	  templateId(-1)
 {
-	if(fieldInfo->getHasVariableSize() == false)
+	if(fieldInfo->getHasVariableSize() == false && getType() != ET_Template && getType() != ET_TemplateArray)
 		numElement = fieldInfo->getFieldCount();
 	else
 		numElement = 0;
@@ -166,6 +166,17 @@ template<typename T> void BtrfBlock::setData(int index, T data) {
 	getDataPtr<T>()[index] = data;
 }
 
+void DLLCALLCONV BtrfBlock::setDataString(int index, const char* data) {
+	for(int i = 0; i < rootBlock->getStringNum(); i++) {
+		if(strcmp(rootBlock->getString(i), data) == 0) {
+			setDataStringId(index, i);
+			return;
+		}
+	}
+
+	setDataStringId(index, rootBlock->addString(data));
+}
+
 template<typename T> T BtrfBlock::getData(int index) {
 	checkIndexType(TypeValue<T>::MemberType, index);
 	return getDataPtr<T>()[index];
@@ -192,7 +203,26 @@ template<typename T> T* BtrfBlock::getDataPtr() {
 }
 
 int BtrfBlock::addBlock(IBtrfBlock *block) {
-	checkIndexType(ET_Template, -1);
+	if(block->getType() == ET_Template)
+		checkIndexType(ET_TemplateArray, -1);
+	else
+		checkIndexType(ET_Template, -1);
+
+	if(block->getType() == ET_TemplateArray && block->getFieldInfo()->getHasVariableSize() && block->getTemplateId() == -1) {
+		for(int i = 0; i < rootBlock->getTemplateNum(); i++) {
+			if(rootBlock->getTemplateGuid(i) == block->getFieldInfo()->getField(0)->getTemplateGuid()) {
+				block->setTemplateId(i);
+				break;
+			}
+		}
+		int usedField;
+		if(block->getElementNumber() > 0) {
+			usedField = block->getBlock(0)->getElementNumber();
+		} else usedField = block->getFieldInfo()->getField(0)->getFieldCount();
+
+		if(block->getTemplateId() == -1)
+			block->setTemplateId(rootBlock->addTemplate(block->getFieldInfo()->getField(0)->getTemplateGuid(), usedField));
+	}
 
 	reinterpret_cast<std::deque<BtrfBlock*>*>(data)->push_back(static_cast<BtrfBlock*>(block));
 	numElement = reinterpret_cast<std::deque<BtrfBlock*>*>(data)->size();
@@ -200,15 +230,16 @@ int BtrfBlock::addBlock(IBtrfBlock *block) {
 }
 
 BtrfBlock* BtrfBlock::getBlock(int index) {
-	checkIndexType(ET_Template, index);
+	if(getType() == ET_Template)
+		checkIndexType(ET_Template, index);
+	else
+		checkIndexType(ET_TemplateArray, index);
+
 	return reinterpret_cast<std::deque<BtrfBlock*>*>(data)->at(index);
 }
 
 bool BtrfBlock::checkIndexType(int type, int index) {
-	if(getType() != type &&
-			!(type == ET_Template && getType() == ET_TemplateArray) &&
-			!(type == ET_TemplateArray && getType() == ET_Template) &&
-			!(type == ET_DWord && getType() == ET_String))
+	if(getType() != type && !(type == ET_DWord && getType() == ET_String))
 	{
 		std::cerr << "Warning: attempting to get wrong type to block ! requested type was " << type << " but block is of type " << getType() << '\n';
 	}

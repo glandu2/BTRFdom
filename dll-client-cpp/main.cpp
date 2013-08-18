@@ -533,7 +533,7 @@ void writeCollada(const Model& model, FILE* file) {
 				std::list<VertexBoneAssociation>::const_iterator vertexIt, vertexItEnd;
 
 				for(vertexIt = vertexInfo.cbegin(), vertexItEnd = vertexInfo.cend(); vertexIt != vertexItEnd; ++vertexIt) {
-					fprintf(file, "%d %d\n", vertexIt->boneIndex, vertexWeightIndex++);
+					fprintf(file, "%d %d ", vertexIt->boneIndex, vertexWeightIndex++);
 				}
 			}
 			fprintf(file, "</v>\n"
@@ -876,7 +876,7 @@ void parseFunc(IBtrfRootBlock* rootBlock, IBtrfRootBlock* animRootBlock, FILE* f
 						mesh.boneVerticesAssociation[vertexIndex].push_back(assoc);
 					}
 				}
-				model.boneTransformMatrix.resize(std::max(k, (int)model.boneTransformMatrix.size()));
+				model.boneTransformMatrix.resize(k);
 
 				mesh.transformMatrix = meshData->getBlock(6)->getDataFloatPtr();
 

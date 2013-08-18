@@ -53,6 +53,7 @@ public:
 	virtual void DLLCALLCONV setDataInt(int index, int data) = 0;
 	virtual void DLLCALLCONV setDataFloat(int index, float data) = 0;
 	virtual void DLLCALLCONV setDataStringId(int index, int id) = 0;
+	virtual void DLLCALLCONV setDataString(int index, const char* data) = 0;
 
 	virtual void DLLCALLCONV setDataCharPtr(char *data) = 0;
 	virtual void DLLCALLCONV setDataShortPtr(short *data) = 0;

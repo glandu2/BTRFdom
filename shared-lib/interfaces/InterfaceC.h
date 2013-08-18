@@ -59,11 +59,12 @@ DLLEXPORT_BTRF const TemplateGuid* DLLCALLCONV getTemplateGuidBtrfBlock(IBtrfBlo
 DLLEXPORT_BTRF void DLLCALLCONV addBlockBtrfBlock(IBtrfBlock *self, IBtrfBlock *other);
 DLLEXPORT_BTRF IBtrfBlock* DLLCALLCONV getBlockBtrfBlock(IBtrfBlock *self, int index);
 
-DLLEXPORT_BTRF void DLLCALLCONV setDataCharBtrfBlock(int index, char data);
-DLLEXPORT_BTRF void DLLCALLCONV setDataShortBtrfBlock(int index, short data);
-DLLEXPORT_BTRF void DLLCALLCONV setDataIntBtrfBlock(int index, int data);
-DLLEXPORT_BTRF void DLLCALLCONV setDataFloatBtrfBlock(int index, float data);
-DLLEXPORT_BTRF void DLLCALLCONV setDataStringIdBtrfBlock(int index, int id);
+DLLEXPORT_BTRF void DLLCALLCONV setDataCharBtrfBlock(IBtrfBlock *self, int index, char data);
+DLLEXPORT_BTRF void DLLCALLCONV setDataShortBtrfBlock(IBtrfBlock *self, int index, short data);
+DLLEXPORT_BTRF void DLLCALLCONV setDataIntBtrfBlock(IBtrfBlock *self, int index, int data);
+DLLEXPORT_BTRF void DLLCALLCONV setDataFloatBtrfBlock(IBtrfBlock *self, int index, float data);
+DLLEXPORT_BTRF void DLLCALLCONV setDataStringIdBtrfBlock(IBtrfBlock *self, int index, int id);
+DLLEXPORT_BTRF void DLLCALLCONV setDataStringBtrfBlock(IBtrfBlock *self, int index, const char* data);
 
 DLLEXPORT_BTRF void DLLCALLCONV setDataCharPtrBtrfBlock(IBtrfBlock *self, char *data);
 DLLEXPORT_BTRF void DLLCALLCONV setDataShortPtrBtrfBlock(IBtrfBlock *self, short *data);

@@ -73,6 +73,7 @@ public:
 	virtual void DLLCALLCONV setDataInt(int index, int data) { setData<int>(index, data); }
 	virtual void DLLCALLCONV setDataFloat(int index, float data) { setData<float>(index, data); }
 	virtual void DLLCALLCONV setDataStringId(int index, int id) { setData<int>(index, id); }
+	virtual void DLLCALLCONV setDataString(int index, const char* data);
 
 	virtual void DLLCALLCONV setDataCharPtr(char *data) { setDataPtr<char>(data); }
 	virtual void DLLCALLCONV setDataShortPtr(short *data) { setDataPtr<short>(data); }
