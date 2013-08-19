@@ -246,7 +246,7 @@ def read_bones_weight(bone_block_template_array, armature, object):
 			vertex_group.add([int(vertex_index)], weight, 'ADD')
 			
 		bone.head = (0, 0, 0)
-		bone.tail = (0, 0, 1)
+		bone.tail = (0, 1, 0)
 		armature.data.update_tag()
 
 		bpy.ops.object.mode_set(mode='OBJECT')
@@ -279,9 +279,9 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_ids):
 	face_array = btrfdll.getDataShortPtrBtrfBlock(face_array_template)
 
 	vertex_data = [ (vertex_array[int(i*3)], vertex_array[int(i*3+1)], vertex_array[int(i*3+2)]) for i in range(int(getElementNum(getBlock(mesh_data, 1))/3)) ]
-	normal_data = [ (normal_array[int(i*3)], normal_array[int(i*3+1)], normal_array[int(i*3+2)]) for i in range(int(getElementNum(getBlock(mesh_data, 2))/3)) ]
+	normal_data = [ (-normal_array[int(i*3)], -normal_array[int(i*3+1)], -normal_array[int(i*3+2)]) for i in range(int(getElementNum(getBlock(mesh_data, 2))/3)) ]
 	texel_data  = [ (texel_array[int(i*2)], 1-texel_array[int(i*2+1)]) for i in range(int(getElementNum(getBlock(mesh_data, 3))/2)) ]
-	face_array =  [ (face_array[int(i*3)], face_array[int(i*3+1)], face_array[int(i*3+2)]) for i in range(int(getElementNum(getBlock(mesh_block_template, 2))/3)) ]
+	face_array =  [ (face_array[int(i*3+2)], face_array[int(i*3+1)], face_array[int(i*3)]) for i in range(int(getElementNum(getBlock(mesh_block_template, 2))/3)) ]
 
 	bm = bmesh.new()
 	for vertex in vertex_data:
