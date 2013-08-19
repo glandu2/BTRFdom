@@ -306,6 +306,8 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_ids):
 	object = bpy.data.objects.new(name, mesh)
 	bpy.context.scene.objects.link(object)
 	object.parent = armature
+	armature_modifier = object.modifiers.new(armature.name, 'ARMATURE')
+	armature_modifier.object = armature
 	
 	read_bones_weight(bone_block_template_array, armature, object)
 	
