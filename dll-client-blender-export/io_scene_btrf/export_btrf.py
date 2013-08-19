@@ -22,6 +22,7 @@ import bpy
 from ctypes import windll, c_float, c_int
 import uuid
 import mathutils
+import os
 
 nx3_version_header_guid = uuid.UUID('{81BCE021-AD76-346f-9C7D-19885FD118B6}')
 
@@ -157,7 +158,7 @@ def get_texture_filename(material):
 			if texture_slot != None:
 				texture = texture_slot.texture
 				if texture != None and texture.type == 'IMAGE':
-					return get_ascii_str(texture.image.filepath)
+					return get_ascii_str(os.path.basename(texture.image.filepath))
 	except:
 		pass
 	return b"(null)"
@@ -524,7 +525,7 @@ def get_nx3_mesh_tm(btrfdll, tmlFile, rootBlock, bone):
 	
 	name = get_ascii_str(bone.name)
 	#TODO: check column-major / row-major ordering
-	tm = [val for vect in mathutils.Matrix.Translation((bone.matrix).translation)*bone.id_data.matrix_world for val in vect]
+	tm = [val for vect in (bone.id_data.matrix_world.inverted()*bone.matrix).inverted() for val in vect]
 
 	#string  name
 	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
