@@ -359,7 +359,13 @@ def read_bones_tm_matrix(bone_tm, armature):
 							   (tm[3], tm[7], tm[11], tm[15])))
 	
 	# try:
-	armature.data.edit_bones[name].transform(matrix.inverted())
+	# transposition problem with rotation matrix
+	rotation = matrix.inverted().to_3x3()
+	translation = matrix.inverted().to_translation()
+	
+	#Don't use directly the 4x4 matrix as it lead to bad results
+	armature.data.edit_bones[name].transform(rotation)
+	armature.data.edit_bones[name].translate(translation)
 	# except:
 		# print("Bone %s not found in armature %s" % (name, armature.name))
 
