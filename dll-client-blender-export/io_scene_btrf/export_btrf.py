@@ -273,6 +273,7 @@ def get_mtl_data(btrfdll, tmlFile, rootBlock):
 
 	arrayBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
 	#iterate over all used materials
+	
 	for object in bpy.data.objects:
 		if object.type == 'MESH' and object.data.materials[0]:
 			mat = object.data.materials[0]
@@ -296,9 +297,9 @@ def write_mtl_header(btrfdll, tmlFile, rootBlock):
 	btrfdll.addBlockBtrfRootBlock(rootBlock, block)
 
 #Meshes data
-def get_vertex_index_weight(vertex_group, vertices_num):
+def get_vertex_index_weight(vertex_group, vertex_indices):
 	data = []
-	for index in range(vertices_num):
+	for index in vertex_indices:
 		try:
 			weight = vertex_group.weight(index)
 			data.append(c_float(index))
@@ -308,12 +309,12 @@ def get_vertex_index_weight(vertex_group, vertices_num):
 
 	return data
 
-def get_nx3_weight_frame(btrfdll, tmlFile, rootBlock, vertex_group, vertices_num):
+def get_nx3_weight_frame(btrfdll, tmlFile, rootBlock, vertex_group, vertex_indices):
 	#Create a block that will contain the data of the template
 	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_weight_frame_guid.bytes_le)
 	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
 	
-	weight_list = get_vertex_index_weight(vertex_group, vertices_num)
+	weight_list = get_vertex_index_weight(vertex_group, vertex_indices)
 	
 	bone_name = get_ascii_str(vertex_group.name)
 	weight_size = len(weight_list)
@@ -342,24 +343,57 @@ def get_nx3_weight_frame(btrfdll, tmlFile, rootBlock, vertex_group, vertices_num
 	
 	return block
 
-def get_nx3_mesh_frame(btrfdll, tmlFile, rootBlock, object, mesh, vertex_groups):
+
+# Represent a vertex with it's normal and UV coords. Vertex, normals and UV coords cannot be separated in Rappelz NX3 format.
+
+class VertexInfo:
+	def __init__(self, vertex_index, vertex, normal, texel = []):
+		self.vertex_index = vertex_index
+		self.vertex = vertex
+		self.normal = normal
+		self.texel = texel
+
+	def equals(self, other):
+		return ( isinstance(other, self.__class__)
+			and self.vertex[0] == other.vertex[0]
+			and self.vertex[1] == other.vertex[1]
+			and self.vertex[2] == other.vertex[2]
+			and self.normal[0] == other.normal[0]
+			and self.normal[1] == other.normal[1]
+			and self.normal[2] == other.normal[2]
+			and self.texel[0] == other.texel[0]
+			and self.texel[1] == other.texel[1] )
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
+
+def index_of_vertex_info(vertex_info_array, vertex_info):
+	for i,v in enumerate(vertex_info_array):
+		if vertex_info.equals(v):
+			return i
+	return -1
+
+
+
+def get_nx3_mesh_frame(btrfdll, tmlFile, rootBlock, mesh_matrix, vertex_info_array, vertex_groups, has_texel):
 	#Create a block that will contain the data of the template
 	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_mesh_frame_guid.bytes_le)
 	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
-
-	vertices_num = len(mesh.vertices)
 	
 	time_value = 0
-	vertex_array = [ coord for face in mesh.polygons for vertexId in face.vertices for coord in mesh.vertices[vertexId].co]
-	normal_array = [ (coord) for face in mesh.polygons for vertexId in face.vertices for coord in mesh.vertices[vertexId].normal]
-	if len(mesh.tessface_uv_textures) > 0:
-		texel_array = [ (uv[0], 1-uv[1]) for uvface in mesh.tessface_uv_textures[0].data for uv in uvface.uv ]
+	vertex_array = [ coord for vertex_info in vertex_info_array for coord in vertex_info.vertex ]
+	normal_array = [ coord for vertex_info in vertex_info_array for coord in vertex_info.normal ]
+	
+	if has_texel == True:
+		texel_array = [ (vertex_info.texel[0], 1-vertex_info.texel[1]) for vertex_info in vertex_info_array]
 	else:
-		texel_array = [[]]
+		texel_array = []
+
 	color_array = []
 	
-	bone_block = [ get_nx3_weight_frame(btrfdll, tmlFile, rootBlock, vertex_group, vertices_num) for vertex_group in vertex_groups]
-	mesh_tm = [val for vect in object.matrix_world.transposed() for val in vect]
+	vertex_indices = [ vertex_info.vertex_index for vertex_info in vertex_info_array ]
+	bone_block = [ get_nx3_weight_frame(btrfdll, tmlFile, rootBlock, vertex_group, vertex_indices) for vertex_group in vertex_groups]
+	mesh_tm = [val for vect in mesh_matrix.transposed() for val in vect]
 
 	#dword  time_value
 	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
@@ -409,21 +443,46 @@ def get_nx3_mesh_frame(btrfdll, tmlFile, rootBlock, object, mesh, vertex_groups)
 	
 	return block
 
+	
+current_texture_index = 0
 def get_nx3_mesh_block(btrfdll, tmlFile, rootBlock, object):
+	global current_texture_index
 	#Create a block that will contain the data of the template
 	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_mesh_block_guid.bytes_le)
 	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
 	
 	mesh = object.to_mesh(bpy.context.scene, True, 'PREVIEW')
 	vertex_groups = object.vertex_groups
+	vertex_info_array = []
+	index_array = []
+
+	mesh.update(calc_tessface=True)
 	
 	if len(mesh.materials) > 0:
-		texture_index = bpy.data.materials.find(mesh.materials[0].name)
+		texture_index = current_texture_index
+		current_texture_index = current_texture_index+1
+		has_material = True
 	else:
 		texture_index = 0
-	mesh_block = get_nx3_mesh_frame(btrfdll, tmlFile, rootBlock, object, mesh, vertex_groups)
-	index_buffer_array = [ (i*3+2, i*3+1, i*3) for i in range(len(mesh.polygons)) ]
-	index_buffer_array = [ index for face in index_buffer_array for index in face ]
+		has_material = False
+        
+	for face in mesh.tessfaces:
+		for i, vertex_index in reversed(list(enumerate(face.vertices))):	#reversed instead of enumerate else normals are wrong
+			if has_material == True:
+				uv_texture = mesh.tessface_uv_textures[0]
+				vertex_info = VertexInfo(vertex_index, mesh.vertices[vertex_index].co, mesh.vertices[vertex_index].normal, uv_texture.data[face.index].uv[i])
+			else:
+				vertex_info = VertexInfo(vertex_index, mesh.vertices[vertex_index].co, mesh.vertices[vertex_index].normal, [])
+
+			index = index_of_vertex_info(vertex_info_array, vertex_info)
+			if index == -1:
+				index = len(vertex_info_array)
+				vertex_info_array.append(vertex_info)
+			else:
+				print("Not added vertex (%f, %f, %f) index %d / %d face %d" % (vertex_info.vertex[0], vertex_info.vertex[1], vertex_info.vertex[2], vertex_index, index, i))
+			index_array.append(index)
+
+	mesh_block = get_nx3_mesh_frame(btrfdll, tmlFile, rootBlock, object.matrix_world, vertex_info_array, vertex_groups, has_material)
 
 	#dword  texture_index
 	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
@@ -437,17 +496,23 @@ def get_nx3_mesh_block(btrfdll, tmlFile, rootBlock, object):
 	
 	#word  index_buffer_array[]
 	subBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 2), rootBlock)
-	btrfdll.setElementNumberBtrfBlock(subBlock, len(index_buffer_array))
-	for i in range(len(index_buffer_array)):
-		btrfdll.setDataShortBtrfBlock(subBlock, i, index_buffer_array[i])
+	btrfdll.setElementNumberBtrfBlock(subBlock, len(index_array))
+	for i in range(len(index_array)):
+		btrfdll.setDataShortBtrfBlock(subBlock, i, index_array[i])
 	btrfdll.addBlockBtrfBlock(block, subBlock)
+	
+	bpy.data.meshes.remove(mesh)
 	
 	return block
 	
 def get_nx3_new_mesh(btrfdll, tmlFile, rootBlock, global_object):
+	global current_texture_index
+
 	#Create a block that will contain the data of the template
 	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_new_mesh_guid.bytes_le)
 	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
+	
+	current_texture_index = 0
 	
 	mesh_name = get_ascii_str(global_object.name)
 	material_id = 0
