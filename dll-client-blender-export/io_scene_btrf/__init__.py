@@ -27,8 +27,15 @@ bl_info = {
 	"description": "Export to a Rappelz NX3 file",
 	"category": "Import-Export"}
 
+if "bpy" in locals():
+    import imp
+    if "export_btrf" in locals():
+        imp.reload(export_btrf)
+    if "import_btrf" in locals():
+        imp.reload(import_btrf)
+
 import bpy
-from bpy_extras.io_utils import ExportHelper
+from bpy_extras.io_utils import ExportHelper, ImportHelper
 from bpy.props import StringProperty
 
 
@@ -47,22 +54,43 @@ class ExportBTRF(bpy.types.Operator, ExportHelper):
 		from . import export_btrf
 		export_btrf.write(self.filepath.encode('cp1252'))
 		return {'FINISHED'};
+		
+	
+class ImportBTRF(bpy.types.Operator, ImportHelper):
+	bl_idname = "import_mesh.nx3"
+	bl_label = "Import NX3"
+	bl_options = {'PRESET'}
+	
+	filepath = StringProperty(
+			subtype='FILE_PATH',
+			)
+	
+	filename_ext	= ".nx3";
+	
+	def execute(self, context):
+		from . import import_btrf
+		import_btrf.read(self.filepath.encode('cp1252'))
+		return {'FINISHED'};
 
 def menu_func_export(self, context):
 	self.layout.operator(ExportBTRF.bl_idname, text="Rappelz NX3 (.nx3)")
 
 
+def menu_func_import(self, context):
+	self.layout.operator(ImportBTRF.bl_idname, text="Rappelz NX3 (.nx3)")
+
+
 def register():
 	bpy.utils.register_module(__name__)
 
-#	bpy.types.INFO_MT_file_import.append(menu_func_import)
+	bpy.types.INFO_MT_file_import.append(menu_func_import)
 	bpy.types.INFO_MT_file_export.append(menu_func_export)
 
 
 def unregister():
 	bpy.utils.unregister_module(__name__)
 
-#	bpy.types.INFO_MT_file_import.remove(menu_func_import)
+	bpy.types.INFO_MT_file_import.remove(menu_func_import)
 	bpy.types.INFO_MT_file_export.remove(menu_func_export)
 
 if __name__ == "__main__":
