@@ -292,7 +292,10 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_ids):
 	bm.faces.layers.tex.verify()
 
 	for face_indices in face_array:
-		face = bm.faces.new([bm.verts[i] for i in face_indices])
+		try:
+			face = bm.faces.new([bm.verts[i] for i in face_indices])
+		except:
+			continue
 		face.loops[0][uv_layer].uv = texel_data[face_indices[0]]
 		face.loops[1][uv_layer].uv = texel_data[face_indices[1]]
 		face.loops[2][uv_layer].uv = texel_data[face_indices[2]]
