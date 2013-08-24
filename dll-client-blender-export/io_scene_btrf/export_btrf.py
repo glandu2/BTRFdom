@@ -299,10 +299,10 @@ def write_mtl_header(btrfdll, tmlFile, rootBlock):
 #Meshes data
 def get_vertex_index_weight(vertex_group, vertex_indices):
 	data = []
-	for index in vertex_indices:
+	for rpz_index, index in enumerate(vertex_indices):
 		try:
 			weight = vertex_group.weight(index)
-			data.append(c_float(index))
+			data.append(c_float(rpz_index))
 			data.append(c_float(weight))
 		except RuntimeError:
 			pass
@@ -355,14 +355,14 @@ class VertexInfo:
 
 	def equals(self, other):
 		return ( isinstance(other, self.__class__)
-			and self.vertex[0] == other.vertex[0]
-			and self.vertex[1] == other.vertex[1]
-			and self.vertex[2] == other.vertex[2]
-			and self.normal[0] == other.normal[0]
-			and self.normal[1] == other.normal[1]
-			and self.normal[2] == other.normal[2]
-			and self.texel[0] == other.texel[0]
-			and self.texel[1] == other.texel[1] )
+			and abs(self.vertex[0] - other.vertex[0]) < 0.0001
+			and abs(self.vertex[1] - other.vertex[1]) < 0.0001
+			and abs(self.vertex[2] - other.vertex[2]) < 0.0001
+			and abs(self.normal[0] - other.normal[0]) < 0.0001
+			and abs(self.normal[1] - other.normal[1]) < 0.0001
+			and abs(self.normal[2] - other.normal[2]) < 0.0001
+			and abs(self.texel[0] - other.texel[0]) < 0.0001
+			and abs(self.texel[1] - other.texel[1]) < 0.0001 )
 
 	def __ne__(self, other):
 		return not self.__eq__(other)
@@ -478,8 +478,6 @@ def get_nx3_mesh_block(btrfdll, tmlFile, rootBlock, object):
 			if index == -1:
 				index = len(vertex_info_array)
 				vertex_info_array.append(vertex_info)
-			else:
-				print("Not added vertex (%f, %f, %f) index %d / %d face %d" % (vertex_info.vertex[0], vertex_info.vertex[1], vertex_info.vertex[2], vertex_index, index, i))
 			index_array.append(index)
 
 	mesh_block = get_nx3_mesh_frame(btrfdll, tmlFile, rootBlock, object.matrix_world, vertex_info_array, vertex_groups, has_material)
