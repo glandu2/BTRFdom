@@ -417,7 +417,7 @@ void BtrfParser::writeBlock(FILE* file, BtrfBlock *block) {
 			fwrite(&value, 1, 1, file);
 		}
 		for(i = 0; i < block->getElementNumber(); i++) {
-			value = block->getData<int>(i)+1;
+			value = block->getDataInt(i)+1;
 			fwrite(&value, 1, 4, file);
 		}
 		break;
