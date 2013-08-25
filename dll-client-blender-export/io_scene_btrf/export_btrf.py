@@ -347,7 +347,7 @@ def get_nx3_weight_frame(btrfdll, tmlFile, rootBlock, vertex_group, vertex_indic
 # Represent a vertex with it's normal and UV coords. Vertex, normals and UV coords cannot be separated in Rappelz NX3 format.
 
 class VertexInfo:
-	def __init__(self, vertex_index, vertex, normal, texel = []):
+	def __init__(self, vertex_index, vertex, normal, texel = [0, 0]):
 		self.vertex_index = vertex_index
 		self.vertex = vertex
 		self.normal = normal
