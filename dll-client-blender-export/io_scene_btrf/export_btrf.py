@@ -275,7 +275,7 @@ def get_mtl_data(btrfdll, tmlFile, rootBlock):
 	#iterate over all used materials
 	
 	for object in bpy.data.objects:
-		if object.type == 'MESH' and object.data.materials[0]:
+		if object.type == 'MESH' and len(object.data.materials) > 0:
 			mat = object.data.materials[0]
 			subBlock = get_mtl_block(btrfdll, tmlFile, rootBlock, mat, bpy.data.materials.find(mat.name))
 			btrfdll.addBlockBtrfBlock(arrayBlock, subBlock)
@@ -458,7 +458,7 @@ def get_nx3_mesh_block(btrfdll, tmlFile, rootBlock, object):
 
 	mesh.update(calc_tessface=True)
 	
-	if len(mesh.materials) > 0:
+	if len(mesh.materials) > 0 and len(mesh.tessface_uv_textures) > 0:
 		texture_index = current_texture_index
 		current_texture_index = current_texture_index+1
 		has_material = True

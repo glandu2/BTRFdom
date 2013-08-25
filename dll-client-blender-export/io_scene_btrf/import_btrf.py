@@ -411,7 +411,7 @@ def read(nx3_filename):
 	if rootBlock == None:
 		return
 		
-	check_version(rootBlock)
+	#check_version(rootBlock)
 	mtl_ids = read_materials(rootBlock, os.path.dirname(nx3_filename.decode()))
 	read_mesh_header(rootBlock, mtl_ids)
 
