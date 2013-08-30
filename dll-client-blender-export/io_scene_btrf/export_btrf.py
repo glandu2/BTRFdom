@@ -166,14 +166,18 @@ def get_texture_filename(material):
 
 def load_btrfdom():
 	#Load the BTRFdom dll (or so on linux)
-	btrfdll = windll.LoadLibrary("./BTRFdom")
+	dllfile = os.path.dirname(__file__) + "\\..\\..\\..\\..\\BTRFdom.dll"
+	print("Loading DLL %s" % dllfile)
+	btrfdll = windll.LoadLibrary(dllfile)
 
 	#Create a TmlFile object that will contain all known templates and their fields
 	tmlFile = btrfdll.createTmlFile()
 
 	#Read some template files
-	btrfdll.parseFileTmlFile(tmlFile, b"nx3.tml")
-	btrfdll.parseFileTmlFile(tmlFile, b"nobj.tml")
+	nx3file = os.path.dirname(__file__) + "\\..\\..\\..\\..\\nx3.tml"
+	btrfdll.parseFileTmlFile(tmlFile, nx3file.encode('ascii'))
+	nobjfile = os.path.dirname(__file__) + "\\..\\..\\..\\..\\nobj.tml"
+	btrfdll.parseFileTmlFile(tmlFile, nobjfile.encode('ascii'))
 	
 	#Create a root block, it will contain all block in the btrf file (it does not exist in the file, it's here only to represent the file with all its blocks)
 	rootBlock = btrfdll.createBtrfRootBlock(tmlFile)
@@ -195,6 +199,18 @@ def write_version(btrfdll, tmlFile, rootBlock):
 	btrfdll.addBlockBtrfBlock(block, subBlock)
 	
 	btrfdll.addBlockBtrfRootBlock(rootBlock, block)
+	
+class Material:
+	def __init__(self, material, id, channel):
+		self.material = material
+		self.id = id
+		self.channel = channel
+		
+	def equals(self, other):
+		return ( isinstance(other, self.__class__)
+			and other.material == self.material
+			and other.id == self.id
+			and other.channel == self.channel)
 
 
 #Create nx3_mtl_block

@@ -164,7 +164,11 @@ getCharPtr = None
 	
 def check_version(rootBlock):
 	block = getBlockByGuid(rootBlock, nx3_version_header_guid.bytes_le)
-	version = getInt(getBlock(block, 0), 0)
+	if block != 0:
+		version = getInt(getBlock(block, 0), 0)
+	else:
+		version = 0
+
 	if version != 65536:
 		print('Version %d is not supported, import may fail. Version should be 65536' % version)
 
