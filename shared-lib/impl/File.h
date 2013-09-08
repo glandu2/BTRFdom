@@ -51,7 +51,7 @@ template<class T>
 const T* File::read(size_t length) {
 	if(readPtr + length > fileSize){
 		length = fileSize - readPtr;
-		fprintf(stderr, "WARNING: reading out of file, at pos %d, tried to read %d bytes while file only %d long !\n", readPtr, length, fileSize);
+    fprintf(stderr, "WARNING: reading out of file, at pos %zd, tried to read %zd bytes while file only %zd long !\n", readPtr, length, fileSize);
 		return 0;
 	}
 	readPtr += length;
