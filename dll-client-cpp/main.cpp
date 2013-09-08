@@ -429,8 +429,8 @@ void writeCollada(const Model& model, FILE* file) {
 
 			//Bones names
 			fprintf(file,
-				"        <source id=\"bone-%s-%d\">\n"
-				"          <Name_array id=\"bonea-%s-%d\" count=\"%d\"> ", geometry.mesh_name, index, geometry.mesh_name, index, mesh.boneVertices.size());
+        "        <source id=\"bone-%s-%d\">\n"
+        "          <Name_array id=\"bonea-%s-%d\" count=\"%zd\"> ", geometry.mesh_name, index, geometry.mesh_name, index, mesh.boneVertices.size());
 
 			for(boneIndex = 0; boneIndex < mesh.boneVertices.size(); boneIndex++) {
 				const Bone& bone = mesh.boneVertices.at(boneIndex);
@@ -440,7 +440,7 @@ void writeCollada(const Model& model, FILE* file) {
 
 			fprintf(file, "</Name_array>\n"
 				"          <technique_common>\n"
-				"            <accessor source=\"#bonea-%s-%d\" count=\"%d\" stride=\"1\">\n"
+        "            <accessor source=\"#bonea-%s-%d\" count=\"%zd\" stride=\"1\">\n"
 				"              <param name=\"JOINT\" type=\"name\"/>\n"
 				"            </accessor>\n"
 				"          </technique_common>\n"
@@ -482,7 +482,7 @@ void writeCollada(const Model& model, FILE* file) {
 			//Inv matrix
 			fprintf(file,
 				"        <source id=\"invmat-%s-%d\">\n"
-				"          <float_array id=\"invmata-%s-%d\" count=\"%d\"> ", geometry.mesh_name, index, geometry.mesh_name, index, model.boneTransformMatrix.size()*16);
+        "          <float_array id=\"invmata-%s-%d\" count=\"%zd\"> ", geometry.mesh_name, index, geometry.mesh_name, index, model.boneTransformMatrix.size()*16);
 
 			for(unsigned int i = 0; i < model.boneTransformMatrix.size(); i++) {
 
@@ -499,7 +499,7 @@ void writeCollada(const Model& model, FILE* file) {
 
 			fprintf(file, "</float_array>\n"
 				"          <technique_common>\n"
-				"            <accessor source=\"#invmata-%s-%d\" count=\"%d\" stride=\"16\">\n"
+        "            <accessor source=\"#invmata-%s-%d\" count=\"%zd\" stride=\"16\">\n"
 				"              <param name=\"TRANSFORM\" type=\"float4x4\"/>\n"
 				"            </accessor>\n"
 				"          </technique_common>\n"
@@ -515,14 +515,14 @@ void writeCollada(const Model& model, FILE* file) {
 
 			//Bones indices
 			fprintf(file,
-				"        <vertex_weights count=\"%d\">\n"
+        "        <vertex_weights count=\"%zd\">\n"
 				"          <input semantic=\"JOINT\" source=\"#bone-%s-%d\" offset=\"0\"/>\n"
 				"          <input semantic=\"WEIGHT\" source=\"#bone-weight-%s-%d\" offset=\"1\"/>\n"
 				"          <vcount> ", mesh.boneVerticesAssociation.size(), geometry.mesh_name, index, geometry.mesh_name, index);
 			for(boneIndex = 0; boneIndex < mesh.boneVerticesAssociation.size(); boneIndex++) {
 				const std::list<VertexBoneAssociation>& vertexInfo = mesh.boneVerticesAssociation.at(boneIndex);
 
-				fprintf(file, "%d ", vertexInfo.size());
+        fprintf(file, "%zd ", vertexInfo.size());
 			}
 			fprintf(file, "</vcount>\n"
 				"          <v> ");

@@ -39,5 +39,9 @@ else()
   add_definitions("-D__GXX_EXPERIMENTAL_CXX0X__")
 endif()
 
+if(UNIX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-rpath,.")
+endif()
+
 add_subdirectory("${SHARED_LIB_PATH}" ${SHARED_LIB_DIR})
 add_subdirectory("${DLLCLIENT_CPP_LIB_PATH}" ${DLLCLIENT_CPP_LIB_DIR})
