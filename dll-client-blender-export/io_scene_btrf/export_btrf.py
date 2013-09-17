@@ -146,6 +146,27 @@ template nx3_new_mesh_header {
 #texture_index: bpy.data.materials.find(bpy.data.objects['mechanic_butkadah3.0'].data.materials[0].name)
 #face indices: bpy.data.objects['Cube'].data.polygons[0].vertices[0..2]
 
+
+class Material:
+	def __init__(self, texture_id, material_id, channel_id, material):
+		self.texture_id = texture_id
+		self.material_id = material_id
+		self.channel_id = channel_id
+		self.material = material
+
+	def equals(self, other):
+		return ( isinstance(other, self.__class__)
+			and self.texture_id == other.texture_id
+			and self.material_id == other.material_id
+			and self.channel_id == other.channel_id
+			and self.material == other.material)
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
+
+
+used_materials = []
+
 def get_ascii_str(input):
 	if(input == None):
 		return b"(null)"
@@ -206,15 +227,15 @@ def write_version(btrfdll, tmlFile, rootBlock):
 
 
 #Create nx3_mtl_block
-def get_mtl_block(btrfdll, tmlFile, rootBlock, material, id):
+def get_mtl_block(btrfdll, tmlFile, rootBlock, material_info):
 	#Create a block that will contain the data of the template
 	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_mtl_block_guid.bytes_le)
 	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
 
-	mtl_name = get_ascii_str(material.name)
-	texture_name = get_texture_filename(material)
-	mtl_id = id
-	channel_id = 0
+	mtl_name = get_ascii_str(material_info.material.name)
+	texture_name = get_texture_filename(material_info.material)
+	mtl_id = material_info.material_id
+	channel_id = material_info.channel_id
 	power = c_float(0)
 	self_illumi = c_float(0)
 	smoothing = 0
@@ -282,11 +303,9 @@ def get_mtl_data(btrfdll, tmlFile, rootBlock):
 	arrayBlock = btrfdll.createBtrfBlock(btrfdll.getFieldTmlBlock(fieldInfo, 0), rootBlock)
 	#iterate over all used materials
 
-	for object in bpy.data.objects:
-		if object.type == 'MESH' and len(object.data.materials) > 0:
-			mat = object.data.materials[0]
-			subBlock = get_mtl_block(btrfdll, tmlFile, rootBlock, mat, bpy.data.materials.find(mat.name))
-			btrfdll.addBlockBtrfBlock(arrayBlock, subBlock)
+	for material_info in used_materials:
+		subBlock = get_mtl_block(btrfdll, tmlFile, rootBlock, material_info)
+		btrfdll.addBlockBtrfBlock(arrayBlock, subBlock)
 
 	btrfdll.addBlockBtrfBlock(block, arrayBlock)
 	return block
@@ -381,8 +400,6 @@ def index_of_vertex_info(vertex_info_array, vertex_info):
 			return i
 	return -1
 
-
-
 def get_nx3_mesh_frame(btrfdll, tmlFile, rootBlock, mesh_matrix, vertex_info_array, vertex_groups, has_texel):
 	#Create a block that will contain the data of the template
 	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_mesh_frame_guid.bytes_le)
@@ -451,10 +468,9 @@ def get_nx3_mesh_frame(btrfdll, tmlFile, rootBlock, mesh_matrix, vertex_info_arr
 
 	return block
 
-
 current_texture_index = 0
 def get_nx3_mesh_block(btrfdll, tmlFile, rootBlock, object):
-	global current_texture_index
+	global used_materials, current_texture_index
 	#Create a block that will contain the data of the template
 	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_mesh_block_guid.bytes_le)
 	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
@@ -467,8 +483,10 @@ def get_nx3_mesh_block(btrfdll, tmlFile, rootBlock, object):
 	mesh.update(calc_tessface=True)
 
 	if len(mesh.materials) > 0 and len(mesh.tessface_uv_textures) > 0:
+		material_info = Material(current_texture_index, 0, 0, mesh.materials[0])
 		texture_index = current_texture_index
-		current_texture_index = current_texture_index+1
+		current_texture_index = current_texture_index + 1
+		used_materials.append(material_info)
 		has_material = True
 	else:
 		texture_index = 0
@@ -512,13 +530,14 @@ def get_nx3_mesh_block(btrfdll, tmlFile, rootBlock, object):
 	return block
 
 def get_nx3_new_mesh(btrfdll, tmlFile, rootBlock, global_object):
-	global current_texture_index
+	global used_materials, current_texture_index
 
 	#Create a block that will contain the data of the template
 	fieldInfo = btrfdll.getTemplateByGuidTmlFile(tmlFile, nx3_new_mesh_guid.bytes_le)
 	block = btrfdll.createBtrfBlock(fieldInfo, rootBlock)
 
 	current_texture_index = 0
+	used_materials = []
 
 	mesh_name = get_ascii_str(global_object.name)
 	material_id = 0
@@ -649,6 +668,8 @@ def write_nx3_new_mesh_header(btrfdll, tmlFile, rootBlock):
 		btrfdll.addBlockBtrfBlock(subBlock, mesh_tm)
 	btrfdll.addBlockBtrfBlock(block, subBlock)
 
+	write_mtl_header(btrfdll, tmlFile, rootBlock)
+
 	btrfdll.addBlockBtrfRootBlock(rootBlock, block)
 
 
@@ -656,9 +677,8 @@ def write(filename):
 	(btrfdll, tmlFile, rootBlock) = load_btrfdom()
 
 	write_version(btrfdll, tmlFile, rootBlock)
-	write_mtl_header(btrfdll, tmlFile, rootBlock)
 	write_nx3_new_mesh_header(btrfdll, tmlFile, rootBlock)
 
-	writter = btrfdll.createBtrfParser(tmlFile)
-	btrfdll.writeFileBtrfParser(writter, filename, rootBlock)
+	writer = btrfdll.createBtrfParser(tmlFile)
+	btrfdll.writeFileBtrfParser(writer, filename, rootBlock)
 	#btrfdll.dumpToStdoutBtrfRootBlock(rootBlock)

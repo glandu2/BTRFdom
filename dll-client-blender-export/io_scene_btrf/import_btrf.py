@@ -148,8 +148,8 @@ nx3_mesh_frame_guid = uuid.UUID('{1C77954B-CDD5-4615-B7AD-F23BD3D0C23E}')
 nx3_weight_frame_guid = uuid.UUID('{B513DF30-80BE-44f4-980B-84B9D979A607}')
 nx3_mesh_tm_guid = uuid.UUID('{F09C560E-7328-411e-87A3-EEB165D5F929}')
 
-btrfdll = 0
-tmlFile = 0
+btrfdll = None
+tmlFile = None
 getBlock = None
 getBlockByGuid = None
 getElementNum = None
@@ -163,12 +163,24 @@ getIntPtr = None
 getShortPtr = None
 getCharPtr = None
 
+def info(str):
+	print('btrfdom: Info: ' + str)
+
+def warn(str):
+	print('btrfdom: Warning: ' + str)
+
+def error(str):
+	print('btrfdom: Error: ' + str)
+	raise(str)
+
+
 def check_version(rootBlock):
 	block = getBlockByGuid(rootBlock, nx3_version_header_guid.bytes_le)
-	version = getInt(getBlock(block, 0), 0)
-	if version != 65536:
-		print('Version %d is not supported, import may fail. Version should be 65536' % version)
-
+	if block:
+		version = getInt(getBlock(block, 0), 0)
+		warn('Version %d is not supported, import may fail. Version should be 65536' % version)
+	else:
+		info('there was no version information in this file')
 
 def read_materials(rootBlock, file_dir):
 	nx3_mtl_header_block = getBlockByGuid(rootBlock, nx3_mtl_header_guid.bytes_le)
@@ -197,7 +209,7 @@ def read_materials(rootBlock, file_dir):
 
 			texture_file = file_dir + '/' + texture_name
 
-			print("Reading material %s with texture %s" % (mtl_name, texture_file))
+			info("Reading material %s with texture %s" % (mtl_name, texture_file))
 
 			material = bpy.data.materials.new(mtl_name)
 
@@ -205,10 +217,12 @@ def read_materials(rootBlock, file_dir):
 				image = bpy.data.images.load(texture_file)
 			except:
 				image = None
-				print("Could not load texture file %s" % texture_file)
+				warn("Could not load texture file %s" % texture_file)
 
 
-			mtl_ids[mtl_id] = (material, image)
+			if not (mtl_id in mtl_ids):
+				mtl_ids[mtl_id] = []
+			mtl_ids[mtl_id].append((material, image))
 
 			texture_slot = material.texture_slots.add()
 			if image:
@@ -321,21 +335,26 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_ids):
 	# for uv1, uv2, uv3 in zip(*[iter(vars)]*2):
 
 	object.matrix_world = matrix
-	# try:
-	object.data.materials.append(mtl_ids[texture_index][0])
-	material_image = mtl_ids[texture_index][1]
-	if material_image:
-		for texture in object.data.uv_textures.active.data:
-			texture.image = material_image
-	# except:
-		# print("Material %d not found for object %s" % (texture_index, object.name))
+	try:
+		object.data.materials.append(mtl_ids[texture_index][0])
+		material_image = mtl_ids[texture_index][1]
+		if material_image:
+			for texture in object.data.uv_textures.active.data:
+				texture.image = material_image
+	except:
+		print("Material %d not found for object %s" % (texture_index, object.name))
 
 	return object
 
 def read_mesh(mesh_template, mtl_ids):
 	name = getString(getBlock(mesh_template, 0), 0)
-	# material_id = getInt(getBlock(mesh_template, 1), 0)
+	material_id = getInt(getBlock(mesh_template, 1), 0)
 	# channel_id = getInt(getBlock(mesh_template, 2), 0)
+
+	if material_id >= 0:
+		mtl_textures = mtl_ids[material_id]
+	else:
+		mtl_textures = None
 
 	mesh_block_array = getBlock(mesh_template, 3)
 
@@ -350,7 +369,7 @@ def read_mesh(mesh_template, mtl_ids):
 
 	mesh_blocks = [ getBlock(mesh_block_array, i) for i in range(getElementNum(mesh_block_array)) ]
 	for i, mesh_block in enumerate(mesh_blocks):
-		object = read_mesh_block(mesh_block, armature, name + "_" + str(i), mtl_ids)
+		object = read_mesh_block(mesh_block, armature, name + "_" + str(i), mtl_textures)
 
 	return armature
 
@@ -401,7 +420,7 @@ def read_mesh_header(rootBlock, mtl_ids):
 
 
 def read(nx3_filename):
-	if btrfdll == 0 or tmlFile == 0:
+	if not btrfdll or not tmlFile:
 		load_btrfdom()
 
 	print("Reading file %s" % nx3_filename.decode())
@@ -421,7 +440,10 @@ def read(nx3_filename):
 
 def getString(block, index):
 	val = btrfdll.getDataStringBtrfBlock(block, index)
-	return val.decode('cp1252')
+	if not val:
+		return "(null)"
+	else:
+		return val.decode('cp1252')
 
 def getFloatPtr(block):
 	ptr = btrfdll.getDataFloatPtrBtrfBlock(block)
