@@ -162,6 +162,7 @@ def error(str):
 
 def check_version(rootBlock):
 	block = rootBlock.getBlockByGuid(nx3_version_header_guid.bytes_le)
+
 	if block:
 		version = block.getBlock(0).getDataInt(0)
 	else:
@@ -178,7 +179,7 @@ def read_materials(rootBlock, file_dir):
 	material_array = [mtl_template_array.getBlock(i) for i in range(mtl_template_array.getElementNumber())]
 
 	#contain rappelz mtl_id <=> blender material id convertion
-	mtl_ids = {}
+	materials = {}
 
 	for material_block in material_array:
 		sub_mtl_block_template_array = material_block.getBlock(0)
@@ -187,7 +188,7 @@ def read_materials(rootBlock, file_dir):
 			mtl_name = material_data_block.getBlock(0).getDataString(0)
 			texture_name = material_data_block.getBlock(1).getDataString(0)
 			mtl_id = material_data_block.getBlock(2).getDataInt(0)
-			# channel_id = getDataInt(getBlock(material_data_block, 3), 0)
+			channel_id = material_data_block.getBlock(3).getDataInt(0)
 			# power = getDataFloat(getBlock(material_data_block, 4), 0)
 			# self_illumi = getDataFloat(getBlock(material_data_block, 5), 0)
 			# smoothing = getDataChar(getBlock(material_data_block, 6), 0)
@@ -195,7 +196,7 @@ def read_materials(rootBlock, file_dir):
 			# diffuse = getDataInt(getBlock(material_data_block, 8), 0)
 			# specular = getDataInt(getBlock(material_data_block, 9), 0)
 
-			texture_name = os.path.basename(texture_name)
+			texture_name = os.path.basename(texture_name.replace('\\', '/'))
 
 			texture_file = file_dir + '/' + texture_name
 
@@ -209,9 +210,13 @@ def read_materials(rootBlock, file_dir):
 				image = None
 				warn("Could not load texture file %s" % texture_file)
 
-			if not (mtl_id in mtl_ids):
-				mtl_ids[mtl_id] = []
-			mtl_ids[mtl_id].append((material, image))
+			if channel_id not in materials:
+				materials[channel_id] = {}
+
+			if not (mtl_id in materials[channel_id]):
+				materials[channel_id][mtl_id] = []
+
+			materials[channel_id][mtl_id].append((material, image))
 
 			texture_slot = material.texture_slots.add()
 			if image:
@@ -226,7 +231,7 @@ def read_materials(rootBlock, file_dir):
 			else:
 				texture_slot.texture = None
 
-	return mtl_ids
+	return materials
 
 
 def read_bones_weight(bone_block_template_array, armature, object):
@@ -256,7 +261,7 @@ def read_bones_weight(bone_block_template_array, armature, object):
 		bpy.ops.object.mode_set(mode='OBJECT')
 
 
-def read_mesh_block(mesh_block_template, armature, name, mtl_ids):
+def read_mesh_block(mesh_block_template, armature, name, mtl_textures):
 	texture_index = mesh_block_template.getBlock(0).getDataInt(0)
 	if mesh_block_template.getBlock(1).getElementNumber() == 0:
 		print("Empty mesh block, ignoring")
@@ -301,9 +306,12 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_ids):
 			face = bm.faces.new([bm.verts[i] for i in face_indices])
 		except:
 			continue
-		face.loops[0][uv_layer].uv = texel_data[face_indices[0]]
-		face.loops[1][uv_layer].uv = texel_data[face_indices[1]]
-		face.loops[2][uv_layer].uv = texel_data[face_indices[2]]
+		face.loops[0][uv_layer].uv = texel_data[face_indices[1]]
+		face.loops[1][uv_layer].uv = texel_data[face_indices[2]]
+		face.loops[2][uv_layer].uv = texel_data[face_indices[0]]
+
+	#2.64: 0,0  1,1  2,2
+	#2.68: 0,1  1,2  2,0
 
 	mesh = bpy.data.meshes.new(name)
 	bm.to_mesh(mesh)
@@ -311,58 +319,53 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_ids):
 	bm.free()
 	del bm
 
-	object = bpy.data.objects.new(name, mesh)
-	bpy.context.scene.objects.link(object)
-	object.parent = armature
-	armature_modifier = object.modifiers.new(armature.name, 'ARMATURE')
+	submesh_object = bpy.data.objects.new(name, mesh)
+	bpy.context.scene.objects.link(submesh_object)
+	armature_modifier = submesh_object.modifiers.new(armature.name, 'ARMATURE')
 	armature_modifier.object = armature
 
-	read_bones_weight(bone_block_template_array, armature, object)
+	read_bones_weight(bone_block_template_array, armature, submesh_object)
 
 	# object.data.tessface_uv_textures.new()
 	# object.data.from_pydata(vertex_data, [], face_array)
 	# object.data.vertices.foreach_set("normal", normal_data)
 	# for uv1, uv2, uv3 in zip(*[iter(vars)]*2):
 
-	object.matrix_world = matrix
+	submesh_object.matrix_world = matrix
 	try:
-		object.data.materials.append(mtl_ids[texture_index][0])
-		material_image = mtl_ids[texture_index][1]
+		submesh_object.data.materials.append(mtl_textures[texture_index][0])
+		material_image = mtl_textures[texture_index][1]
 		if material_image:
-			for texture in object.data.uv_textures.active.data:
+			for texture in submesh_object.data.uv_textures.active.data:
 				texture.image = material_image
 	except:
-		print(("Material %d not found for object %s" % (texture_index, object.name)))
+		print(("Material %d not found for object %s" % (texture_index, submesh_object.name)))
 
-	return object
+	return submesh_object
 
 
-def read_mesh(mesh_template, mtl_ids):
+def read_mesh(mesh_template, materials, armature):
 	name = mesh_template.getBlock(0).getDataString(0)
 	material_id = mesh_template.getBlock(1).getDataInt(0)
-	# channel_id = getDataInt(getBlock(mesh_template, 2), 0)
+	channel_id = mesh_template.getBlock(2).getDataInt(0)
 
-	if material_id >= 0:
-		mtl_textures = mtl_ids[material_id]
-	else:
+	try:
+		mtl_textures = materials[channel_id][material_id]
+	except:
 		mtl_textures = None
 
 	mesh_block_array = mesh_template.getBlock(3)
 
 	# animation, visi, childrens are not supported
 
-	armature_data = bpy.data.armatures.new(name)
-	armature = bpy.data.objects.new(name, armature_data)
-	bpy.context.scene.objects.link(armature)
-	bpy.context.scene.update()
-	bpy.context.scene.objects.active = armature
-	armature.select = True
+	mesh_object = bpy.data.objects.new(name, None)
+	bpy.context.scene.objects.link(mesh_object)
+	mesh_object.parent = armature
 
 	mesh_blocks = [mesh_block_array.getBlock(i) for i in range(mesh_block_array.getElementNumber())]
 	for i, mesh_block in enumerate(mesh_blocks):
-		object = read_mesh_block(mesh_block, armature, name + "_" + str(i), mtl_textures)
-
-	return armature
+		submesh_object = read_mesh_block(mesh_block, armature, name + "_" + str(i), mtl_textures)
+		submesh_object.parent = mesh_object
 
 
 def read_bones_tm_matrix(bone_tm, armature):
@@ -371,10 +374,10 @@ def read_bones_tm_matrix(bone_tm, armature):
 	tm = [bone_tm.getBlock(1).getDataFloat(i) for i in range(16)]
 
 	#lint:disable
-	matrix = mathutils.Matrix(((tm[0], tm[4], tm[8],  tm[12]),
-							   (tm[1], tm[5], tm[9],  tm[13]),
-							   (tm[2], tm[6], tm[10], tm[14]),
-							   (tm[3], tm[7], tm[11], tm[15])))
+	matrix = mathutils.Matrix(((tm[0], tm[4], tm[8], tm[12]),
+								(tm[1], tm[5], tm[9], tm[13]),
+								(tm[2], tm[6], tm[10], tm[14]),
+								(tm[3], tm[7], tm[11], tm[15])))
 	#lint:enable
 
 	# try:
@@ -389,21 +392,27 @@ def read_bones_tm_matrix(bone_tm, armature):
 		# print("Bone %s not found in armature %s" % (name, armature.name))
 
 
-def read_mesh_header(rootBlock, mtl_ids):
+def read_mesh_header(rootBlock, materials, filename):
 	nx3_mesh_header_block = rootBlock.getBlockByGuid(nx3_new_mesh_header_guid.bytes_le)
 	mesh_template_array = nx3_mesh_header_block.getBlock(0)
 	bones_tm_template_array = nx3_mesh_header_block.getBlock(1)
 
-	# mesh_array = [ getBlock(mesh_template_array, i) for i in range(getElementNumber(mesh_template_array)) ]
+	mesh_array = [mesh_template_array.getBlock(i) for i in range(mesh_template_array.getElementNumber())]
 
 	if mesh_template_array.getElementNumber() == 0:
 		print("No mesh in the file !")
 		return
-	elif mesh_template_array.getElementNumber() > 1:
-		print("Warning: more than one mesh in file, using only the first one (multiple meshes are not supported)")
 
-	mesh = mesh_template_array.getBlock(0)
-	armature = read_mesh(mesh, mtl_ids)
+	# Create armature with the filename as name, then an object with the same name
+	armature_data = bpy.data.armatures.new(filename)
+	armature = bpy.data.objects.new(filename, armature_data)
+	bpy.context.scene.objects.link(armature)
+	bpy.context.scene.update()
+	bpy.context.scene.objects.active = armature
+	armature.select = True
+
+	for mesh in mesh_array:
+		read_mesh(mesh, materials, armature)
 
 	bones_tm_array = [bones_tm_template_array.getBlock(i) for i in range(bones_tm_template_array.getElementNumber())]
 
@@ -431,6 +440,6 @@ def read(nx3_filename):
 		error("Could not read nx3 file")
 		return
 
-	check_version(rootBlock)
-	mtl_ids = read_materials(rootBlock, os.path.dirname(nx3_filename))
-	read_mesh_header(rootBlock, mtl_ids)
+	#check_version(rootBlock)
+	materials = read_materials(rootBlock, os.path.dirname(nx3_filename))
+	read_mesh_header(rootBlock, materials, os.path.basename(nx3_filename))

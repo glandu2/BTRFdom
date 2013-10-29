@@ -181,6 +181,13 @@ btrfdll.addTemplateTmlFile.argtypes = [c_void_p, c_void_p]
 btrfdll.addTemplateTmlFile.restype = None
 
 
+def wrap_ptr(classname, ptr):
+	if not ptr or ptr == 0:
+		return None
+	else:
+		return classname(ptr)
+
+
 # This type is used to prevent function call with a null pointer
 class NullPointer:
 	__slots__ = ()
@@ -190,7 +197,10 @@ class Object:
 	__slots__ = ("internal_object")
 
 	def __init__(self, init=NullPointer()):
-		self.internal_object = init
+		if(not init or init == 0):
+			self.internal_object = NullPointer()
+		else:
+			self.internal_object = init
 
 	def delete(self):
 		btrfdll.deleteObject(self.internal_object)
@@ -213,7 +223,7 @@ class BtrfBlock(Object):
 		return btrfdll.setTemplateIdBtrfBlock(self.internal_object, c_int)
 
 	def getFieldInfo(self):
-		return TmlBlock(btrfdll.getFieldInfoBtrfBlock(self.internal_object))
+		return wrap_ptr(TmlBlock, btrfdll.getFieldInfoBtrfBlock(self.internal_object))
 
 	def getType(self):
 		return btrfdll.getTypeBtrfBlock(self.internal_object)
@@ -223,7 +233,7 @@ class BtrfBlock(Object):
 		if not val:
 			return "(null)"
 		else:
-			return val.decode(locale.getdefaultlocale()[1])
+			return val.decode(locale.getdefaultlocale()[1], "replace")
 
 	def getElementNumber(self):
 		return btrfdll.getElementNumberBtrfBlock(self.internal_object)
@@ -238,7 +248,7 @@ class BtrfBlock(Object):
 		return btrfdll.addBlockBtrfBlock(self.internal_object, other.internal_object)
 
 	def getBlock(self, c_int):
-		return BtrfBlock(btrfdll.getBlockBtrfBlock(self.internal_object, c_int))
+		return wrap_ptr(BtrfBlock, btrfdll.getBlockBtrfBlock(self.internal_object, c_int))
 
 	def setDataChar(self, c_int, c_char):
 		return btrfdll.setDataCharBtrfBlock(self.internal_object, c_int, c_char)
@@ -256,7 +266,7 @@ class BtrfBlock(Object):
 		return btrfdll.setDataStringIdBtrfBlock(self.internal_object, c_int, c_int2)
 
 	def setDataString(self, c_int, c_char_p):
-		return btrfdll.setDataStringBtrfBlock(self.internal_object, c_int, c_char_p.encode(locale.getdefaultlocale()[1]))
+		return btrfdll.setDataStringBtrfBlock(self.internal_object, c_int, c_char_p.encode(locale.getdefaultlocale()[1], "replace"))
 
 	def setDataCharPtr(self, c_char):
 		return btrfdll.setDataCharPtrBtrfBlock(self.internal_object, c_char)
@@ -290,7 +300,7 @@ class BtrfBlock(Object):
 		if not val:
 			return "(null)"
 		else:
-			return val.decode(locale.getdefaultlocale()[1])
+			return val.decode(locale.getdefaultlocale()[1], "replace")
 
 	def getDataStringId(self, c_int):
 		return btrfdll.getDataStringIdBtrfBlock(self.internal_object, c_int)
@@ -321,7 +331,7 @@ class BtrfParser(Object):
 		self.internal_object = btrfdll.createBtrfParser(tmlFile.internal_object)
 
 	def readFile(self, filename):
-		return BtrfRootBlock(btrfdll.readFileBtrfParser(self.internal_object, filename.encode(locale.getdefaultlocale()[1])))
+		return wrap_ptr(BtrfRootBlock, btrfdll.readFileBtrfParser(self.internal_object, filename.encode(locale.getdefaultlocale()[1])))
 
 	def writeFile(self, filename, rootblock):
 		return btrfdll.writeFileBtrfParser(self.internal_object, filename.encode(locale.getdefaultlocale()[1]), rootblock.internal_object)
@@ -337,14 +347,14 @@ class BtrfRootBlock(Object):
 		self.internal_object = btrfdll.createBtrfRootBlock(tmlFile.internal_object)
 
 	def addString(self, c_char_p):
-		return btrfdll.addStringBtrfRootBlock(self.internal_object, c_char_p.encode(locale.getdefaultlocale()[1]))
+		return btrfdll.addStringBtrfRootBlock(self.internal_object, c_char_p.encode(locale.getdefaultlocale()[1], "replace"))
 
 	def getString(self, c_int):
 		val = btrfdll.getStringBtrfRootBlock(self.internal_object, c_int)
 		if not val:
 			return "(null)"
 		else:
-			return val.decode(locale.getdefaultlocale()[1])
+			return val.decode(locale.getdefaultlocale()[1], "replace")
 
 	def addTemplate(self, c_char_p, c_int):
 		return btrfdll.addTemplateBtrfRootBlock(self.internal_object, c_char_p, c_int)
@@ -362,16 +372,16 @@ class BtrfRootBlock(Object):
 		return btrfdll.getTemplateNumBtrfRootBlock(self.internal_object)
 
 	def getTmlFile(self):
-		return TmlFile(btrfdll.getTmlFileBtrfRootBlock(self.internal_object))
+		return wrap_ptr(TmlFile, btrfdll.getTmlFileBtrfRootBlock(self.internal_object))
 
 	def addBlock(self, block):
 		return btrfdll.addBlockBtrfRootBlock(self.internal_object, block.internal_object)
 
 	def getBlockByGuid(self, c_char_p):
-		return BtrfBlock(btrfdll.getBlockByGuidBtrfRootBlock(self.internal_object, c_char_p))
+		return wrap_ptr(BtrfBlock, btrfdll.getBlockByGuidBtrfRootBlock(self.internal_object, c_char_p))
 
 	def getBlockByName(self, c_int):
-		return BtrfBlock(btrfdll.getBlockByNameBtrfRootBlock(self.internal_object, c_int))
+		return wrap_ptr(BtrfBlock, btrfdll.getBlockByNameBtrfRootBlock(self.internal_object, c_int))
 
 	def getBlockNum(self):
 		return btrfdll.getBlockNumBtrfRootBlock(self.internal_object)
@@ -397,10 +407,10 @@ class TmlBlock(Object):
 		if not val:
 			return "(null)"
 		else:
-			return val.decode(locale.getdefaultlocale()[1])
+			return val.decode(locale.getdefaultlocale()[1], "replace")
 
 	def getField(self, c_int):
-		return TmlBlock(btrfdll.getFieldTmlBlock(self.internal_object, c_int))
+		return wrap_ptr(TmlBlock, btrfdll.getFieldTmlBlock(self.internal_object, c_int))
 
 	def getFieldCount(self):
 		return btrfdll.getFieldCountTmlBlock(self.internal_object)
@@ -428,10 +438,10 @@ class TmlFile(Object):
 		return btrfdll.parseFileTmlFile(self.internal_object, c_char_p.encode(locale.getdefaultlocale()[1]))
 
 	def getTemplateByGuid(self, c_char_p):
-		return TmlBlock(btrfdll.getTemplateByGuidTmlFile(self.internal_object, c_char_p))
+		return wrap_ptr(TmlBlock, btrfdll.getTemplateByGuidTmlFile(self.internal_object, c_char_p))
 
 	def getTemplateByName(self, c_char_p):
-		return TmlBlock(btrfdll.getTemplateByNameTmlFile(self.internal_object, c_char_p.encode(locale.getdefaultlocale()[1])))
+		return wrap_ptr(TmlBlock, btrfdll.getTemplateByNameTmlFile(self.internal_object, c_char_p.encode(locale.getdefaultlocale()[1], "replace")))
 
 	def addTemplate(self, c_void_p2):
 		return btrfdll.addTemplateTmlFile(self.internal_object, c_void_p2)

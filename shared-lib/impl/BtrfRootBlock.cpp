@@ -24,6 +24,13 @@
 BtrfRootBlock::BtrfRootBlock(TmlFile *tmlFile) : tmlFile(tmlFile)
 {
 	//ctor
+	marker = "BtrfRootBlock";
+}
+
+BtrfRootBlock::~BtrfRootBlock()
+{
+	//ctor
+	marker = "NotABtrfRootBlock";
 }
 
 int BtrfRootBlock::addBlock(IBtrfBlock *iBlock) {
@@ -78,6 +85,15 @@ int BtrfRootBlock::getTemplateUsedField(int index) {
 		exit(-2);
 	}
 	return templateList.at(index).usedFieldsNum;
+}
+
+BtrfBlock* BtrfRootBlock::getBlockByGuid(const TemplateGuid& guid) {
+	std::unordered_multimap<TemplateGuid, BtrfBlock*>::const_iterator it;
+	it = blocks.find(guid);
+	if(it != blocks.end())
+		return it->second;
+	else
+		return 0;
 }
 
 void BtrfRootBlock::dumpToStdout() {
