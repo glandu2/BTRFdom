@@ -128,12 +128,10 @@
 
 import bpy
 import bmesh
-from ctypes import c_float, c_int, c_short, c_byte, c_char_p, c_void_p
-import ctypes
 import uuid
 import mathutils
+from .btrfdom import BtrfParser, TmlFile
 import os
-import sys
 
 nx3_version_header_guid = uuid.UUID('{81BCE021-AD76-346f-9C7D-19885FD118B6}')
 
@@ -148,62 +146,54 @@ nx3_mesh_frame_guid = uuid.UUID('{1C77954B-CDD5-4615-B7AD-F23BD3D0C23E}')
 nx3_weight_frame_guid = uuid.UUID('{B513DF30-80BE-44f4-980B-84B9D979A607}')
 nx3_mesh_tm_guid = uuid.UUID('{F09C560E-7328-411e-87A3-EEB165D5F929}')
 
-btrfdll = None
-tmlFile = None
-getBlock = None
-getBlockByGuid = None
-getElementNum = None
-getString = None
-getFloat = None
-getInt = None
-getShort = None
-getChar = None
-getFloatPtr = None
-getIntPtr = None
-getShortPtr = None
-getCharPtr = None
 
 def info(str):
-	print('btrfdom: Info: ' + str)
+	print(('btrfdom: Info: ' + str))
+
 
 def warn(str):
-	print('btrfdom: Warning: ' + str)
+	print(('btrfdom: Warning: ' + str))
+
 
 def error(str):
-	print('btrfdom: Error: ' + str)
+	print(('btrfdom: Error: ' + str))
 	raise(str)
 
 
 def check_version(rootBlock):
-	block = getBlockByGuid(rootBlock, nx3_version_header_guid.bytes_le)
+	block = rootBlock.getBlockByGuid(nx3_version_header_guid.bytes_le)
 	if block:
-		version = getInt(getBlock(block, 0), 0)
-		warn('Version %d is not supported, import may fail. Version should be 65536' % version)
+		version = block.getBlock(0).getDataInt(0)
 	else:
 		info('there was no version information in this file')
+		version = 0
+
+	if version != 65536:
+		warn('The version is not 65536, the model may not be read correctly')
+
 
 def read_materials(rootBlock, file_dir):
-	nx3_mtl_header_block = getBlockByGuid(rootBlock, nx3_mtl_header_guid.bytes_le)
-	mtl_template_array = getBlock(nx3_mtl_header_block, 0)
-	material_array = [getBlock(mtl_template_array, i) for i in range(getElementNum(mtl_template_array))]
+	nx3_mtl_header_block = rootBlock.getBlockByGuid(nx3_mtl_header_guid.bytes_le)
+	mtl_template_array = nx3_mtl_header_block.getBlock(0)
+	material_array = [mtl_template_array.getBlock(i) for i in range(mtl_template_array.getElementNumber())]
 
 	#contain rappelz mtl_id <=> blender material id convertion
 	mtl_ids = {}
 
 	for material_block in material_array:
-		sub_mtl_block_template_array = getBlock(material_block, 0)
-		material_data_array = [getBlock(sub_mtl_block_template_array, i) for i in range(getElementNum(sub_mtl_block_template_array))]
+		sub_mtl_block_template_array = material_block.getBlock(0)
+		material_data_array = [sub_mtl_block_template_array.getBlock(i) for i in range(sub_mtl_block_template_array.getElementNumber())]
 		for material_data_block in material_data_array:
-			mtl_name = getString(getBlock(material_data_block, 0), 0)
-			texture_name = getString(getBlock(material_data_block, 1), 0)
-			mtl_id = getInt(getBlock(material_data_block, 2), 0)
-			# channel_id = getInt(getBlock(material_data_block, 3), 0)
-			# power = getFloat(getBlock(material_data_block, 4), 0)
-			# self_illumi = getFloat(getBlock(material_data_block, 5), 0)
-			# smoothing = getChar(getBlock(material_data_block, 6), 0)
-			# ambient = getInt(getBlock(material_data_block, 7), 0)
-			# diffuse = getInt(getBlock(material_data_block, 8), 0)
-			# specular = getInt(getBlock(material_data_block, 9), 0)
+			mtl_name = material_data_block.getBlock(0).getDataString(0)
+			texture_name = material_data_block.getBlock(1).getDataString(0)
+			mtl_id = material_data_block.getBlock(2).getDataInt(0)
+			# channel_id = getDataInt(getBlock(material_data_block, 3), 0)
+			# power = getDataFloat(getBlock(material_data_block, 4), 0)
+			# self_illumi = getDataFloat(getBlock(material_data_block, 5), 0)
+			# smoothing = getDataChar(getBlock(material_data_block, 6), 0)
+			# ambient = getDataInt(getBlock(material_data_block, 7), 0)
+			# diffuse = getDataInt(getBlock(material_data_block, 8), 0)
+			# specular = getDataInt(getBlock(material_data_block, 9), 0)
 
 			texture_name = os.path.basename(texture_name)
 
@@ -218,7 +208,6 @@ def read_materials(rootBlock, file_dir):
 			except:
 				image = None
 				warn("Could not load texture file %s" % texture_file)
-
 
 			if not (mtl_id in mtl_ids):
 				mtl_ids[mtl_id] = []
@@ -239,25 +228,25 @@ def read_materials(rootBlock, file_dir):
 
 	return mtl_ids
 
+
 def read_bones_weight(bone_block_template_array, armature, object):
-	for i in range(getElementNum(bone_block_template_array)):
-		bone_block = getBlock(bone_block_template_array, i)
-		name = getString(getBlock(bone_block, 0), 0)
-		weight_array = [ getFloat(getBlock(bone_block, 1), i) for i in range(getElementNum(getBlock(bone_block, 1))) ]
-		offset_array = [ getFloat(getBlock(bone_block, 2), i) for i in range(getElementNum(getBlock(bone_block, 2))) ]
+	for i in range(bone_block_template_array.getElementNumber()):
+		bone_block = bone_block_template_array.getBlock(i)
+		name = bone_block.getBlock(0).getDataString(0)
+		weight_array = [bone_block.getBlock(1).getDataFloat(i) for i in range(bone_block.getBlock(1).getElementNumber())]
+		offset_array = [bone_block.getBlock(2).getDataFloat(i) for i in range(bone_block.getBlock(2).getElementNumber())]
 
-		print("Mesh %s: reading vertex weight for bone %s" % (object.name, name))
+		print(("Mesh %s: reading vertex weight for bone %s" % (object.name, name)))
 
-		if int(len(offset_array)/3) != int(len(weight_array)):
-			print("Bone %s in object %s has a wrong number of offsets or weights, ignoring offsets" % (name, object.name))
+		if int(len(offset_array) / 3) != int(len(weight_array)):
+			print(("Bone %s in object %s has a wrong number of offsets or weights, ignoring offsets" % (name, object.name)))
 			offset_array = []
-
 
 		bpy.ops.object.mode_set(mode='EDIT')
 
 		bone = armature.data.edit_bones.new(name)
 		vertex_group = object.vertex_groups.new(name)
-		for vertex_index, weight in zip(*[iter(weight_array)]*2):
+		for vertex_index, weight in zip(*[iter(weight_array)] * 2):
 			vertex_group.add([int(vertex_index)], weight, 'ADD')
 
 		bone.head = (0, 0, 0)
@@ -268,35 +257,36 @@ def read_bones_weight(bone_block_template_array, armature, object):
 
 
 def read_mesh_block(mesh_block_template, armature, name, mtl_ids):
-	texture_index = getInt(getBlock(mesh_block_template, 0), 0)
-	if getElementNum(getBlock(mesh_block_template, 1)) == 0:
+	texture_index = mesh_block_template.getBlock(0).getDataInt(0)
+	if mesh_block_template.getBlock(1).getElementNumber() == 0:
 		print("Empty mesh block, ignoring")
 		return
 
-	if getElementNum(getBlock(mesh_block_template, 1)) > 1:
+	if mesh_block_template.getBlock(1).getElementNumber() > 1:
 		print("Mesh block has multiple mesh frame, this is not supported, using first frame")
 
-	mesh_data = getBlock(getBlock(mesh_block_template, 1), 0)
-	time_value = getInt(getBlock(mesh_data, 0), 0)
-	vertex_array = [ getFloat(getBlock(mesh_data, 1), i) for i in range(getElementNum(getBlock(mesh_data, 1))) ]
-	normal_array = [ getFloat(getBlock(mesh_data, 2), i) for i in range(getElementNum(getBlock(mesh_data, 2))) ]
-	texel_array = [ getFloat(getBlock(mesh_data, 3), i) for i in range(getElementNum(getBlock(mesh_data, 3))) ]
+	mesh_data = mesh_block_template.getBlock(1).getBlock(0)
+	#time_value = mesh_data.getBlock(0).getDataInt(0)
+	vertex_array = [mesh_data.getBlock(1).getDataFloat(i) for i in range(mesh_data.getBlock(1).getElementNumber())]
+	normal_array = [mesh_data.getBlock(2).getDataFloat(i) for i in range(mesh_data.getBlock(2).getElementNumber())]
+	texel_array = [mesh_data.getBlock(3).getDataFloat(i) for i in range(mesh_data.getBlock(3).getElementNumber())]
 
-	bone_block_template_array = getBlock(mesh_data, 5)
+	bone_block_template_array = mesh_data.getBlock(5)
 
-	tm = [ getFloat(getBlock(mesh_data, 6), i) for i in range(16) ]
-	matrix = mathutils.Matrix(((tm[0], tm[4], tm[8],  tm[12]),
-					           (tm[1], tm[5], tm[9],  tm[13]),
-					           (tm[2], tm[6], tm[10], tm[14]),
-					           (tm[3], tm[7], tm[11], tm[15])))
+	tm = [mesh_data.getBlock(6).getDataFloat(i) for i in range(16)]
 
-	face_array_template = getBlock(mesh_block_template, 2)
-	face_array = btrfdll.getDataShortPtrBtrfBlock(face_array_template)
+	matrix = mathutils.Matrix(((tm[0], tm[4], tm[8], tm[12]),
+								(tm[1], tm[5], tm[9], tm[13]),
+								(tm[2], tm[6], tm[10], tm[14]),
+								(tm[3], tm[7], tm[11], tm[15])))
 
-	vertex_data = [ (vertex_array[int(i*3)], vertex_array[int(i*3+1)], vertex_array[int(i*3+2)]) for i in range(int(getElementNum(getBlock(mesh_data, 1))/3)) ]
-	normal_data = [ (-normal_array[int(i*3)], -normal_array[int(i*3+1)], -normal_array[int(i*3+2)]) for i in range(int(getElementNum(getBlock(mesh_data, 2))/3)) ]
-	texel_data  = [ (texel_array[int(i*2)], 1-texel_array[int(i*2+1)]) for i in range(int(getElementNum(getBlock(mesh_data, 3))/2)) ]
-	face_array =  [ (face_array[int(i*3+2)], face_array[int(i*3+1)], face_array[int(i*3)]) for i in range(int(getElementNum(getBlock(mesh_block_template, 2))/3)) ]
+	face_array_template = mesh_block_template.getBlock(2)
+	face_array = face_array_template.getDataShortPtr()
+
+	vertex_data = [(vertex_array[int(i * 3)], vertex_array[int(i * 3 + 1)], vertex_array[int(i * 3 + 2)]) for i in range(int(mesh_data.getBlock(1).getElementNumber() / 3))]
+	normal_data = [(-normal_array[int(i * 3)], -normal_array[int(i * 3 + 1)], -normal_array[int(i * 3 + 2)]) for i in range(int(mesh_data.getBlock(2).getElementNumber() / 3))]
+	texel_data = [(texel_array[int(i * 2)], 1 - texel_array[int(i * 2 + 1)]) for i in range(int(mesh_data.getBlock(3).getElementNumber() / 2))]
+	face_array = [(face_array[int(i * 3 + 2)], face_array[int(i * 3 + 1)], face_array[int(i * 3)]) for i in range(int(mesh_block_template.getBlock(2).getElementNumber() / 3))]
 
 	bm = bmesh.new()
 	for vertex in vertex_data:
@@ -331,7 +321,7 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_ids):
 
 	# object.data.tessface_uv_textures.new()
 	# object.data.from_pydata(vertex_data, [], face_array)
-    # object.data.vertices.foreach_set("normal", normal_data)
+	# object.data.vertices.foreach_set("normal", normal_data)
 	# for uv1, uv2, uv3 in zip(*[iter(vars)]*2):
 
 	object.matrix_world = matrix
@@ -342,21 +332,22 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_ids):
 			for texture in object.data.uv_textures.active.data:
 				texture.image = material_image
 	except:
-		print("Material %d not found for object %s" % (texture_index, object.name))
+		print(("Material %d not found for object %s" % (texture_index, object.name)))
 
 	return object
 
+
 def read_mesh(mesh_template, mtl_ids):
-	name = getString(getBlock(mesh_template, 0), 0)
-	material_id = getInt(getBlock(mesh_template, 1), 0)
-	# channel_id = getInt(getBlock(mesh_template, 2), 0)
+	name = mesh_template.getBlock(0).getDataString(0)
+	material_id = mesh_template.getBlock(1).getDataInt(0)
+	# channel_id = getDataInt(getBlock(mesh_template, 2), 0)
 
 	if material_id >= 0:
 		mtl_textures = mtl_ids[material_id]
 	else:
 		mtl_textures = None
 
-	mesh_block_array = getBlock(mesh_template, 3)
+	mesh_block_array = mesh_template.getBlock(3)
 
 	# animation, visi, childrens are not supported
 
@@ -367,19 +358,24 @@ def read_mesh(mesh_template, mtl_ids):
 	bpy.context.scene.objects.active = armature
 	armature.select = True
 
-	mesh_blocks = [ getBlock(mesh_block_array, i) for i in range(getElementNum(mesh_block_array)) ]
+	mesh_blocks = [mesh_block_array.getBlock(i) for i in range(mesh_block_array.getElementNumber())]
 	for i, mesh_block in enumerate(mesh_blocks):
 		object = read_mesh_block(mesh_block, armature, name + "_" + str(i), mtl_textures)
 
 	return armature
 
+
 def read_bones_tm_matrix(bone_tm, armature):
-	name = getString(getBlock(bone_tm, 0), 0)
-	tm = [ getFloat(getBlock(bone_tm, 1), i) for i in range(16) ]
+	name = bone_tm.getBlock(0).getDataString(0)
+
+	tm = [bone_tm.getBlock(1).getDataFloat(i) for i in range(16)]
+
+	#lint:disable
 	matrix = mathutils.Matrix(((tm[0], tm[4], tm[8],  tm[12]),
 							   (tm[1], tm[5], tm[9],  tm[13]),
 							   (tm[2], tm[6], tm[10], tm[14]),
 							   (tm[3], tm[7], tm[11], tm[15])))
+	#lint:enable
 
 	# try:
 	# transposition problem with rotation matrix
@@ -394,22 +390,22 @@ def read_bones_tm_matrix(bone_tm, armature):
 
 
 def read_mesh_header(rootBlock, mtl_ids):
-	nx3_mesh_header_block = getBlockByGuid(rootBlock, nx3_new_mesh_header_guid.bytes_le)
-	mesh_template_array = getBlock(nx3_mesh_header_block, 0)
-	bones_tm_template_array = getBlock(nx3_mesh_header_block, 1)
+	nx3_mesh_header_block = rootBlock.getBlockByGuid(nx3_new_mesh_header_guid.bytes_le)
+	mesh_template_array = nx3_mesh_header_block.getBlock(0)
+	bones_tm_template_array = nx3_mesh_header_block.getBlock(1)
 
-	# mesh_array = [ getBlock(mesh_template_array, i) for i in range(getElementNum(mesh_template_array)) ]
+	# mesh_array = [ getBlock(mesh_template_array, i) for i in range(getElementNumber(mesh_template_array)) ]
 
-	if getElementNum(mesh_template_array) == 0:
+	if mesh_template_array.getElementNumber() == 0:
 		print("No mesh in the file !")
 		return
-	elif getElementNum(mesh_template_array) > 1:
+	elif mesh_template_array.getElementNumber() > 1:
 		print("Warning: more than one mesh in file, using only the first one (multiple meshes are not supported)")
 
-	mesh = getBlock(mesh_template_array, 0)
+	mesh = mesh_template_array.getBlock(0)
 	armature = read_mesh(mesh, mtl_ids)
 
-	bones_tm_array = [ getBlock(bones_tm_template_array, i) for i in range(getElementNum(bones_tm_template_array)) ]
+	bones_tm_array = [bones_tm_template_array.getBlock(i) for i in range(bones_tm_template_array.getElementNumber())]
 
 	bpy.ops.object.mode_set(mode='EDIT')
 	for bone_tm in bones_tm_array:
@@ -417,92 +413,24 @@ def read_mesh_header(rootBlock, mtl_ids):
 	bpy.ops.object.mode_set(mode='OBJECT')
 
 
-
-
 def read(nx3_filename):
-	if not btrfdll or not tmlFile:
-		load_btrfdom()
+	info("Reading file %s" % nx3_filename)
 
-	print("Reading file %s" % nx3_filename.decode())
+	script_dir = os.path.dirname(os.path.abspath(__file__))
 
-	parser = btrfdll.createBtrfParser(tmlFile)
-	rootBlock = btrfdll.readFileBtrfParser(parser, nx3_filename)
+	tmlFile = TmlFile()
+	tmlFile.create()
+	tmlFile.parseFile(script_dir + "/nx3.tml")
+	tmlFile.parseFile(script_dir + "/nobj.tml")
 
-	if rootBlock == None:
+	parser = BtrfParser()
+	parser.create(tmlFile)
+	rootBlock = parser.readFile(nx3_filename)
+
+	if rootBlock is None:
+		error("Could not read nx3 file")
 		return
 
-	#check_version(rootBlock)
-	mtl_ids = read_materials(rootBlock, os.path.dirname(nx3_filename.decode()))
+	check_version(rootBlock)
+	mtl_ids = read_materials(rootBlock, os.path.dirname(nx3_filename))
 	read_mesh_header(rootBlock, mtl_ids)
-
-
-
-
-def getString(block, index):
-	val = btrfdll.getDataStringBtrfBlock(block, index)
-	if not val:
-		return "(null)"
-	else:
-		return val.decode('cp1252')
-
-def getFloatPtr(block):
-	ptr = btrfdll.getDataFloatPtrBtrfBlock(block)
-
-
-def load_btrfdom():
-	global btrfdll, tmlFile, getBlock, getElementNum, getString, getFloat, getInt, getShort, getChar, getBlockByGuid
-
-	#Load the BTRFdom dll (or so on linux)
-	script_dir = os.path.dirname(os.path.abspath(__file__))
-	if sys.platform == 'win32':
-		from ctypes import windll
-		btrfdll = windll.LoadLibrary(script_dir + "/BTRFdom.dll")
-	else:
-		from ctypes import cdll
-		btrfdll = cdll.LoadLibrary(script_dir + "/BTRFdom.so")
-
-	#Create a TmlFile object that will contain all known templates and their fields
-	tmlFile = btrfdll.createTmlFile()
-
-	#Read some template files
-	btrfdll.parseFileTmlFile(tmlFile, str(script_dir + "/nx3.tml").encode('ascii'))
-	btrfdll.parseFileTmlFile(tmlFile, str(script_dir + "/nobj.tml").encode('ascii'))
-
-	#Simpler functions
-	getBlock = btrfdll.getBlockBtrfBlock
-	getBlock.restype = c_void_p
-	getBlock.argtypes = [c_void_p, c_int]
-	getElementNum = btrfdll.getElementNumberBtrfBlock
-	getElementNum.restype = c_int
-	getElementNum.argtypes = [c_void_p]
-	#getString is implemented in python to return strings and not byte arrays
-	btrfdll.getDataStringBtrfBlock.restype = c_char_p
-	btrfdll.getDataStringBtrfBlock.argtypes = [c_void_p, c_int]
-	getFloat = btrfdll.getDataFloatBtrfBlock
-	getFloat.restype = c_float
-	getFloat.argtypes = [c_void_p, c_int]
-	getInt = btrfdll.getDataIntBtrfBlock
-	getInt.restype = c_int
-	getInt.argtypes = [c_void_p, c_int]
-	getShort = btrfdll.getDataShortBtrfBlock
-	getShort.restype = c_short
-	getShort.argtypes = [c_void_p, c_int]
-	getChar = btrfdll.getDataCharBtrfBlock
-	getChar.restype = c_byte
-	getChar.argtypes = [c_void_p, c_int]
-	getBlockByGuid = btrfdll.getBlockByGuidBtrfRootBlock
-	getBlockByGuid.restype = c_void_p
-	getBlockByGuid.argtypes = [c_void_p, c_void_p]
-
-	getFloatPtr = btrfdll.getDataFloatPtrBtrfBlock
-	getFloatPtr.restype = ctypes.POINTER(c_float)
-	getFloatPtr.argtypes = [c_void_p]
-	getIntPtr = btrfdll.getDataIntPtrBtrfBlock
-	getIntPtr.restype = ctypes.POINTER(c_int)
-	getIntPtr.argtypes = [c_void_p]
-	getShortPtr = btrfdll.getDataShortPtrBtrfBlock
-	getShortPtr.restype = ctypes.POINTER(c_short)
-	getShortPtr.argtypes = [c_void_p]
-	getCharPtr = btrfdll.getDataCharPtrBtrfBlock
-	getCharPtr.restype = ctypes.POINTER(c_byte)
-	getCharPtr.argtypes = [c_void_p]

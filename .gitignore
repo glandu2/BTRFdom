@@ -6,6 +6,7 @@ x64/
 build*/
 bin*/
 obj*/
+package/
 
 *.ilk
 *.exe
@@ -15,6 +16,7 @@ obj*/
 *.user*
 *.so*
 CMakeLists.txt.*
+*.nja
 
 #python
 __pycache__
