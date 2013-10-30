@@ -337,6 +337,11 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 
 	mesh_object.matrix_world = matrix
 
+	if has_texture:
+		del uv_layer
+		del tex_layer
+
+
 	# object.data.tessface_uv_textures.new()
 	# object.data.from_pydata(vertex_data, [], face_array)
 	# object.data.vertices.foreach_set("normal", normal_data)
