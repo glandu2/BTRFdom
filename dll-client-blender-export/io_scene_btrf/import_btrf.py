@@ -293,29 +293,40 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_textures):
 	texel_data = [(texel_array[int(i * 2)], 1 - texel_array[int(i * 2 + 1)]) for i in range(int(mesh_data.getBlock(3).getElementNumber() / 2))]
 	face_array = [(face_array[int(i * 3 + 2)], face_array[int(i * 3 + 1)], face_array[int(i * 3)]) for i in range(int(mesh_block_template.getBlock(2).getElementNumber() / 3))]
 
+
+	if len(texel_data) > 0 and mtl_textures is not None:
+		has_texture = True
+	else:
+		has_texture = False
+
 	bm = bmesh.new()
 	for vertex in vertex_data:
 		vert = bm.verts.new(vertex)
 		vert.normal = normal_data[vert.index]
 
-	uv_layer = bm.loops.layers.uv.verify()
-	bm.faces.layers.tex.verify()
+	if has_texture:
+		uv_layer = bm.loops.layers.uv.verify()
+		bm.faces.layers.tex.verify()
 
 	for face_indices in face_array:
 		try:
 			face = bm.faces.new([bm.verts[i] for i in face_indices])
 		except:
 			continue
-		face.loops[0][uv_layer].uv = texel_data[face_indices[1]]
-		face.loops[1][uv_layer].uv = texel_data[face_indices[2]]
-		face.loops[2][uv_layer].uv = texel_data[face_indices[0]]
+		if has_texture:
+			face.loops[0][uv_layer].uv = texel_data[face_indices[1]]
+			face.loops[1][uv_layer].uv = texel_data[face_indices[2]]
+			face.loops[2][uv_layer].uv = texel_data[face_indices[0]]
 
 	#2.64: 0,0  1,1  2,2
 	#2.68: 0,1  1,2  2,0
 
 	mesh = bpy.data.meshes.new(name)
 	bm.to_mesh(mesh)
-	del uv_layer
+
+	if has_texture:
+		del uv_layer
+
 	bm.free()
 	del bm
 
@@ -332,14 +343,16 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_textures):
 	# for uv1, uv2, uv3 in zip(*[iter(vars)]*2):
 
 	submesh_object.matrix_world = matrix
-	try:
-		submesh_object.data.materials.append(mtl_textures[texture_index][0])
-		material_image = mtl_textures[texture_index][1]
-		if material_image:
-			for texture in submesh_object.data.uv_textures.active.data:
-				texture.image = material_image
-	except:
-		print(("Material %d not found for object %s" % (texture_index, submesh_object.name)))
+
+	if has_texture:
+		try:
+			submesh_object.data.materials.append(mtl_textures[texture_index][0])
+			material_image = mtl_textures[texture_index][1]
+			if material_image:
+				for texture in submesh_object.data.uv_textures.active.data:
+					texture.image = material_image
+		except:
+			print(("Material %d not found for object %s" % (texture_index, submesh_object.name)))
 
 	return submesh_object
 
