@@ -200,7 +200,7 @@ def read_materials(rootBlock, file_dir):
 
 			texture_file = file_dir + '/' + texture_name
 
-			info("Reading material %s with texture %s" % (mtl_name, texture_file))
+			# info("Reading material %s with texture %s" % (mtl_name, texture_file))
 
 			material = bpy.data.materials.new(mtl_name)
 
@@ -213,7 +213,7 @@ def read_materials(rootBlock, file_dir):
 			if channel_id not in materials:
 				materials[channel_id] = {}
 
-			if not (mtl_id in materials[channel_id]):
+			if mtl_id not in materials[channel_id]:
 				materials[channel_id][mtl_id] = []
 
 			materials[channel_id][mtl_id].append((material, image))
@@ -234,34 +234,26 @@ def read_materials(rootBlock, file_dir):
 	return materials
 
 
-def read_bones_weight(bone_block_template_array, armature, object):
+def read_bones_weight(bone_block_template_array, vertices):
+	bones_weight = {}
 	for i in range(bone_block_template_array.getElementNumber()):
 		bone_block = bone_block_template_array.getBlock(i)
 		name = bone_block.getBlock(0).getDataString(0)
 		weight_array = [bone_block.getBlock(1).getDataFloat(i) for i in range(bone_block.getBlock(1).getElementNumber())]
 		offset_array = [bone_block.getBlock(2).getDataFloat(i) for i in range(bone_block.getBlock(2).getElementNumber())]
 
-		print(("Mesh %s: reading vertex weight for bone %s" % (object.name, name)))
+		# info("Mesh %s: reading vertex weight for bone %s" % (object.name, name))
 
-		if int(len(offset_array) / 3) != int(len(weight_array)):
-			print(("Bone %s in object %s has a wrong number of offsets or weights, ignoring offsets" % (name, object.name)))
+		if int(len(offset_array) / 3) != int(len(weight_array) / 2):
+			warn("Bone %s in object %s has a wrong number of offsets or weights, ignoring offsets" % (name, object.name))
 			offset_array = []
 
-		bpy.ops.object.mode_set(mode='EDIT')
+		bones_weight[name] = [[vertices[int(vertex_index)].index, weight] for vertex_index, weight in zip(*[iter(weight_array)] * 2)]
 
-		bone = armature.data.edit_bones.new(name)
-		vertex_group = object.vertex_groups.new(name)
-		for vertex_index, weight in zip(*[iter(weight_array)] * 2):
-			vertex_group.add([int(vertex_index)], weight, 'ADD')
-
-		bone.head = (0, 0, 0)
-		bone.tail = (0, 1, 0)
-		armature.data.update_tag()
-
-		bpy.ops.object.mode_set(mode='OBJECT')
+	return bones_weight
 
 
-def read_mesh_block(mesh_block_template, armature, name, mtl_textures):
+def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 	texture_index = mesh_block_template.getBlock(0).getDataInt(0)
 	if mesh_block_template.getBlock(1).getElementNumber() == 0:
 		print("Empty mesh block, ignoring")
@@ -293,55 +285,64 @@ def read_mesh_block(mesh_block_template, armature, name, mtl_textures):
 	texel_data = [(texel_array[int(i * 2)], 1 - texel_array[int(i * 2 + 1)]) for i in range(int(mesh_data.getBlock(3).getElementNumber() / 2))]
 	face_array = [(face_array[int(i * 3 + 2)], face_array[int(i * 3 + 1)], face_array[int(i * 3)]) for i in range(int(mesh_block_template.getBlock(2).getElementNumber() / 3))]
 
-	bm = bmesh.new()
+	if len(texel_data) > 0 and mtl_textures is not None:
+		has_texture = True
+	else:
+		has_texture = False
+
+	if has_texture:
+		try:
+			material = mtl_textures[texture_index][0]
+			material_image = mtl_textures[texture_index][1]
+		except:
+			warn("Material %d not found for object %s" % (texture_index, mesh_object.name))
+			material = None
+			material_image = None
+			has_texture = False
+
+	if has_texture:
+		try:
+			material_names = [m.name for m in mesh_object.data.materials]
+			material_id = material_names.index(material.name)
+		except ValueError:
+			mesh_object.data.materials.append(bpy.data.materials[material.name])
+			material_id = len(mesh_object.data.materials) - 1
+
+	vertices = []
 	for vertex in vertex_data:
 		vert = bm.verts.new(vertex)
 		vert.normal = normal_data[vert.index]
+		vertices.append(vert)
 
-	uv_layer = bm.loops.layers.uv.verify()
-	bm.faces.layers.tex.verify()
+	bm.verts.index_update()
+
+	if has_texture:
+		uv_layer = bm.loops.layers.uv.verify()
+		tex_layer = bm.faces.layers.tex.verify()
 
 	for face_indices in face_array:
 		try:
-			face = bm.faces.new([bm.verts[i] for i in face_indices])
+			face = bm.faces.new([vertices[i] for i in face_indices])
 		except:
 			continue
-		face.loops[0][uv_layer].uv = texel_data[face_indices[1]]
-		face.loops[1][uv_layer].uv = texel_data[face_indices[2]]
-		face.loops[2][uv_layer].uv = texel_data[face_indices[0]]
+		if has_texture:
+			face.material_index = material_id
+			face[tex_layer].image = material_image
+			face.loops[0][uv_layer].uv = texel_data[face_indices[1]]
+			face.loops[1][uv_layer].uv = texel_data[face_indices[2]]
+			face.loops[2][uv_layer].uv = texel_data[face_indices[0]]
 
 	#2.64: 0,0  1,1  2,2
 	#2.68: 0,1  1,2  2,0
 
-	mesh = bpy.data.meshes.new(name)
-	bm.to_mesh(mesh)
-	del uv_layer
-	bm.free()
-	del bm
-
-	submesh_object = bpy.data.objects.new(name, mesh)
-	bpy.context.scene.objects.link(submesh_object)
-	armature_modifier = submesh_object.modifiers.new(armature.name, 'ARMATURE')
-	armature_modifier.object = armature
-
-	read_bones_weight(bone_block_template_array, armature, submesh_object)
+	mesh_object.matrix_world = matrix
 
 	# object.data.tessface_uv_textures.new()
 	# object.data.from_pydata(vertex_data, [], face_array)
 	# object.data.vertices.foreach_set("normal", normal_data)
 	# for uv1, uv2, uv3 in zip(*[iter(vars)]*2):
 
-	submesh_object.matrix_world = matrix
-	try:
-		submesh_object.data.materials.append(mtl_textures[texture_index][0])
-		material_image = mtl_textures[texture_index][1]
-		if material_image:
-			for texture in submesh_object.data.uv_textures.active.data:
-				texture.image = material_image
-	except:
-		print(("Material %d not found for object %s" % (texture_index, submesh_object.name)))
-
-	return submesh_object
+	return read_bones_weight(bone_block_template_array, vertices)
 
 
 def read_mesh(mesh_template, materials, armature):
@@ -358,14 +359,44 @@ def read_mesh(mesh_template, materials, armature):
 
 	# animation, visi, childrens are not supported
 
-	mesh_object = bpy.data.objects.new(name, None)
+	mesh = bpy.data.meshes.new(name)
+	mesh_object = bpy.data.objects.new(name, mesh)
 	bpy.context.scene.objects.link(mesh_object)
 	mesh_object.parent = armature
+	armature_modifier = mesh_object.modifiers.new(armature.name, 'ARMATURE')
+	armature_modifier.object = armature
+
+	bm = bmesh.new()
+	bones_weight = []
 
 	mesh_blocks = [mesh_block_array.getBlock(i) for i in range(mesh_block_array.getElementNumber())]
 	for i, mesh_block in enumerate(mesh_blocks):
-		submesh_object = read_mesh_block(mesh_block, armature, name + "_" + str(i), mtl_textures)
-		submesh_object.parent = mesh_object
+		bones_weight.append(read_mesh_block(mesh_block, mesh_object, bm, mtl_textures))
+
+	bm.to_mesh(mesh)
+	bm.free()
+	del bm
+
+	bpy.ops.object.mode_set(mode='EDIT')
+
+	for bone_weights in bones_weight:
+		for bone_name, weight_infos in list(bone_weights.items()):
+			if bone_name not in list(armature.data.edit_bones.keys()):
+				bone = armature.data.edit_bones.new(bone_name)
+				bone.head = (0, 0, 0)
+				bone.tail = (0, 1, 0)
+
+			if bone_name not in list(mesh_object.vertex_groups.keys()):
+				vertex_group = mesh_object.vertex_groups.new(bone_name)
+			else:
+				vertex_group = mesh_object.vertex_groups[bone_name]
+
+			for vertex_index, weight in weight_infos:
+				vertex_group.add([vertex_index], weight, 'ADD')
+
+	armature.data.update_tag()
+
+	bpy.ops.object.mode_set(mode='OBJECT')
 
 
 def read_bones_tm_matrix(bone_tm, armature):
