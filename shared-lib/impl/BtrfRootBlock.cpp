@@ -20,6 +20,7 @@
 
 #include "BtrfRootBlock.h"
 #include "BtrfBlock.h"
+#include <stdio.h>
 
 BtrfRootBlock::BtrfRootBlock(TmlFile *tmlFile) : tmlFile(tmlFile)
 {
@@ -96,12 +97,12 @@ BtrfBlock* BtrfRootBlock::getBlockByGuid(const TemplateGuid& guid) {
 		return 0;
 }
 
-void BtrfRootBlock::dumpToStdout() {
-	std::cout << "BTRF/DIFK File\n" << blockList.size() << " root blocks\n";
+void BtrfRootBlock::dumpToStdout(FILE *fout) {
+	fprintf(fout, "BTRF/DIFK File\n%zd root blocks\n", blockList.size());
 	for(size_t i = 0; i < blockList.size(); ++i) {
 		BtrfBlock *block = blockList.at(i);
-		std::cout << "Block no" << i << "\n{\n";
-		block->dumpToStdout();
-		std::cout << "}\n";
+		fprintf(fout, "Block no %zd\n{\n", i);
+		block->dumpToStdout(fout);
+		fprintf(fout, "}\n");
 	}
 }

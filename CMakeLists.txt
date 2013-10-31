@@ -3,6 +3,7 @@ project(BTRFdom)
 
 set(CMAKE_VERBOSE_MAKEFILE true)
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
+set(CMAKE_BUILD_TYPE "Debug")
 
 set(SHARED_LIB_DIR shared-lib)
 set(DLLCLIENT_CPP_LIB_DIR "dll-client-cpp")

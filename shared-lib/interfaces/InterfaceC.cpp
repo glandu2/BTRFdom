@@ -23,6 +23,7 @@
 #include "IBtrfRootBlock.h"
 #include "ITmlBlock.h"
 #include "ITmlFile.h"
+#include <stdio.h>
 
 
 #ifdef __cplusplus
@@ -379,7 +380,7 @@ DLLEXPORT_BTRF int DLLCALLCONV getBlockNumBtrfRootBlock(IBtrfRootBlock *self) {
 #pragma comment(linker, "/export:dumpToStdoutBtrfRootBlock=_dumpToStdoutBtrfRootBlock@4")
 #endif
 DLLEXPORT_BTRF void DLLCALLCONV dumpToStdoutBtrfRootBlock(IBtrfRootBlock *self) {
-	self->dumpToStdout();
+	self->dumpToStdout(stdout);
 }
 
 ///////////////////////////////////////////

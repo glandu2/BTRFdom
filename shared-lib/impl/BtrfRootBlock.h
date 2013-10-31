@@ -60,7 +60,7 @@ public:
 	virtual BtrfBlock * DLLCALLCONV getBlockById(int id) { return blockList.at(id); }
 	virtual int DLLCALLCONV getBlockNum() { return blockList.size(); }
 
-	virtual void DLLCALLCONV dumpToStdout();
+	virtual void DLLCALLCONV dumpToStdout(FILE* fout);
 
 protected:
 private:

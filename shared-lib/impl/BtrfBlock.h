@@ -52,7 +52,7 @@ public:
 	template<typename T> T getData(int index);
 	template<typename T> void setDataPtr(T* data);
 	template<typename T> T* getDataPtr();
-	void dumpToStdout();
+	void dumpToStdout(FILE *fout);
 
 public:
 	virtual void DLLCALLCONV setElementNumber(int num);

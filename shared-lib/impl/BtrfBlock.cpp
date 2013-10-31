@@ -258,80 +258,76 @@ const TemplateGuid& BtrfBlock::getTemplateGuid() {
 		return fieldInfo->getTemplateGuid();
 }
 
-void BtrfBlock::dumpToStdout() {
+void BtrfBlock::dumpToStdout(FILE *fout) {
 	int i;
-
-	std::cout << std::resetiosflags((std::ios_base::fmtflags)-1);
-	//std::cout << getName() << " Block with " << numElement << " elements: ";
 
 	switch(fieldInfo->getType()) {
 	case ET_Char:
-		std::cout << "Char " << getName() << "[" << numElement << "] = ";
+		fprintf(fout, "Char %s[%d] = ", getName(), numElement);
 		for(i=0; i<numElement; i++)
-			std::cout << (int)getDataChar(i) << ", ";
+			fprintf(fout, "%d, ", (int)getDataChar(i));
 		break;
 
 	case ET_UChar:
-		std::cout << "UChar " << getName() << "[" << numElement << "] = ";
+		fprintf(fout, "UChar %s[%d] = ", getName(), numElement);
 		for(i=0; i<numElement; i++)
-			std::cout << (unsigned int)getDataChar(i) << ", ";
+			fprintf(fout, "%u, ", (unsigned int)getDataChar(i));
 		break;
 
 	case ET_Word:
-		std::cout << "Word " << getName() << "[" << numElement << "] = ";
+		fprintf(fout, "Word %s[%d] = ", getName(), numElement);
 		for(i=0; i<numElement; i++)
-			std::cout << getDataShort(i) << ", ";
+			fprintf(fout, "%d, ", (int)getDataShort(i));
 		break;
 
 	case ET_DWord:
-		std::cout << "DWord " << getName() << "[" << numElement << "] = ";
+		fprintf(fout, "DWord %s[%d] = ", getName(), numElement);
 		for(i=0; i<numElement; i++)
-			std::cout << getDataInt(i) << ", ";
+			fprintf(fout, "%d, ", (int)getDataInt(i));
 		break;
 
 	case ET_Float:
-		std::cout << "Float " << getName() << "[" << numElement << "] = " << std::setprecision(5);
+		fprintf(fout, "Float %s[%d] = ", getName(), numElement);
 		for(i=0; i<numElement; i++)
-			std::cout << getDataFloat(i) << ", ";
+			fprintf(fout, "%.5f, ", getDataFloat(i));
 		break;
 
 	case ET_String:
-		std::cout << "String " << getName() << "[" << numElement << "] = \n{\n";
+		fprintf(fout, "String %s[%d] = \n{\n", getName(), numElement);
 		for(i=0; i<numElement; i++) {
 			if(getDataString(i))
-				std::cout << getDataString(i) << '\n';
-			else std::cout << "<NULL>\n";
+				fprintf(fout, "\"%s\"\n", getDataString(i));
+			else fprintf(fout, "<NULL>\n");
 		}
-		std::cout << "}";
+		fprintf(fout, "}");
 		break;
 
 	case ET_Template: {
 		const TemplateGuid* templateGuid = &getTemplateGuid();
 
-		std::cout << "Template GUID = " << std::hex << std::uppercase <<
-					 (unsigned int)templateGuid->Data1 << '-' << (unsigned int)templateGuid->Data2 << '-' << (unsigned int)templateGuid->Data3 << '-' <<
-					 (unsigned int)templateGuid->Data4[0] << (unsigned int)templateGuid->Data4[1] << '-' << (unsigned int)templateGuid->Data4[2] <<
-					 (unsigned int)templateGuid->Data4[3] << (unsigned int)templateGuid->Data4[4] << (unsigned int)templateGuid->Data4[5] <<
-					 (unsigned int)templateGuid->Data4[6] << (unsigned int)templateGuid->Data4[7] << std::dec << " " << getName() << ", " << numElement << " subfields\n{\n";
+		fprintf(fout, "Template GUID = %08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X %s, %d subfields\n{\n",
+					 (unsigned int)templateGuid->Data1,    (unsigned int)templateGuid->Data2,    (unsigned int)templateGuid->Data3,
+					 (unsigned int)templateGuid->Data4[0], (unsigned int)templateGuid->Data4[1], (unsigned int)templateGuid->Data4[2],
+					 (unsigned int)templateGuid->Data4[3], (unsigned int)templateGuid->Data4[4], (unsigned int)templateGuid->Data4[5],
+					 (unsigned int)templateGuid->Data4[6], (unsigned int)templateGuid->Data4[7], getName(), numElement);
 		for(i=0; i<numElement; i++)
-			getBlock(i)->dumpToStdout();
-		std::cout << "}";
+			getBlock(i)->dumpToStdout(fout);
+		fprintf(fout, "}");
 		break;
 	}
 
 	case ET_TemplateArray:
-		std::cout << "Template array " << getName() << "[" << numElement << "] = \n{\n";
+		fprintf(fout, "Template array %s[%d] = \n{\n", getName(), numElement);
 		for(i=0; i<numElement; i++)
-			getBlock(i)->dumpToStdout();
-		std::cout << "}";
+			getBlock(i)->dumpToStdout(fout);
+		fprintf(fout, "}");
 		break;
 
 	case ET_Array:
 	case ET_None:
-		std::cerr << "Internal error, magic is None or Array\n";
+		fprintf(stderr, "Internal error, magic is None or Array\n");
 		exit(-1);
 	}
-	std::cout << std::resetiosflags((std::ios_base::fmtflags)-1);
 
-	std::cout << '\n';
+	fprintf(fout, "\n");
 }

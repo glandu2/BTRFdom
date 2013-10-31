@@ -49,7 +49,6 @@ TmlBlock* TmlFile::getTemplateByGuid(const TemplateGuid& guid) {
 						(unsigned int)guid.Data4[0] << (unsigned int)guid.Data4[1] << '-' << (unsigned int)guid.Data4[2] <<
 						(unsigned int)guid.Data4[3] << (unsigned int)guid.Data4[4] << (unsigned int)guid.Data4[5] <<
 						(unsigned int)guid.Data4[6] << (unsigned int)guid.Data4[7] << '\n';
-		abort();
 		return nullptr;
 	}
 }
@@ -59,7 +58,6 @@ TmlBlock* TmlFile::getTemplateByName(const char *name) {
 		return templatesByName.at(std::string(name));
 	} catch(...) {
 		std::cerr << "Missing template definition, .tml file is missing ?, field name = " << name << '\n';
-		abort();
 		return nullptr;
 	}
 }

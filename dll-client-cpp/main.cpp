@@ -948,6 +948,7 @@ int main(int argc, char* argv[])
 	const char* outFile = 0;
 	const char* outBtrfFile = 0;
 	bool dumpData = false;
+	const char* dump_out = "-";
 
 	if(argc <= 1)
 		help();
@@ -966,8 +967,10 @@ int main(int argc, char* argv[])
 		} else if(!strcmp(argv[i], "--output-btrf") && (i+1) < argc) {
 			outBtrfFile = argv[i+1];
 			i++;
-		} else if(!strcmp(argv[i], "--dump")) {
+		} else if(!strcmp(argv[i], "--dump") && (i+1) < argc) {
 			dumpData = true;
+			dump_out = argv[i+1];
+			i++;
 		} else if(!strcmp(argv[i], "--help")) {
 			help();
 		}
@@ -981,7 +984,8 @@ int main(int argc, char* argv[])
 	}
 
 	for(unsigned int i = 0; i < templateFiles.size(); i++) {
-		tmlFile->parseFile(templateFiles.at(i));
+		if(!tmlFile->parseFile(templateFiles.at(i)))
+			return -1;
 	}
 
 	IBtrfParser *parser = createBtrfParser(tmlFile);
@@ -996,8 +1000,17 @@ int main(int argc, char* argv[])
 	}
 
 	if(dumpData) {
-		for(unsigned int i = 0; i < rootBlocks.size(); i++) {
-			rootBlocks.at(i)->dumpToStdout();
+		FILE* dump_fout;
+
+		if(!strcmp(dump_out, "-"))
+			dump_fout = stdout;
+		else dump_fout = fopen(dump_out, "wb");
+		if(dump_fout) {
+			for(unsigned int i = 0; i < rootBlocks.size(); i++) {
+				rootBlocks.at(i)->dumpToStdout(dump_fout);
+			}
+			if(dump_fout != stdout)
+				fclose(dump_fout);
 		}
 	}
 
@@ -1020,7 +1033,7 @@ void help() {
 	printf("BTRFReader by Glandu2 - Read BTRF files, dump and export to collada nx3 files\n"
 		   "Usage: BTRFReader.exe --input <input_file> [--input <input_file> ...]\n"
 		   "           [--template <template_file.tml> [--template <template_file.tml> ...]]\n"
-		   "           [--output <output_file.dae>] [--dump]\n"
+		   "           [--output <output_file.dae>] [--dump <file>]\n"
 		   "           [--output-btrf <output_btrf_file.nx3>]\n"
 		   "\n"
 		   "--input       Specify which input files to read. These files are usually\n"
@@ -1029,7 +1042,7 @@ void help() {
 		   "                  default are used (nx3.tml & nobj.tml)\n"
 		   "--ouput       The output collada file. The first input file MUST be a .nx3 file\n"
 		   "--output-btrf Output a BTRF file. Only the first input file is used\n"
-		   "--dump        Dump the contents of the files to stdout\n"
+		   "--dump        Dump the contents of the files to <file>. Use - for stdout\n"
 		   "                  (ie: to the console when not redirected)\n"
 		   "\n"
 		   " Note:\n"
