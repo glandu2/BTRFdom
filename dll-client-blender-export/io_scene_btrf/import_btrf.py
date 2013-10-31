@@ -341,7 +341,6 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 		del uv_layer
 		del tex_layer
 
-
 	# object.data.tessface_uv_textures.new()
 	# object.data.from_pydata(vertex_data, [], face_array)
 	# object.data.vertices.foreach_set("normal", normal_data)
@@ -359,6 +358,8 @@ def read_mesh(mesh_template, materials, armature):
 		mtl_textures = materials[channel_id][material_id]
 	except:
 		mtl_textures = None
+		if material_id != -1:
+			warn("Unable to find material for mesh %s: channel_id %d, mtl_id %d" % (name, channel_id, material_id))
 
 	mesh_block_array = mesh_template.getBlock(3)
 
