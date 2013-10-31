@@ -1,0 +1,319 @@
+template nx3_version_header
+{81BCE021-AD76-346f-9C7D-19885FD118B6}
+{
+	dword	version;
+}
+
+template nx3_mtl_block
+{81BCE071-AC76-496f-9C7D-19885FD118B6}
+{
+	string  mtl_name;
+	string	texture_name;
+
+	dword	mtl_id;
+	dword	channel_id;
+	
+	float	power;	
+	float	self_illumi;	
+	
+	char	smoothing;
+		
+	dword	ambient;
+	dword	diffuse;
+	dword	specular;
+}
+
+template nx3_mtl
+{52BCCAA6-3C16-4286-8B9E-1A798F9D94DE}
+{
+	dword			sub_mtl_block_size;
+	nx3_mtl_block	sub_mtl_block_array[sub_mtl_block_size];	
+}
+
+template nx3_mtl_header
+{209BBB41-681F-4b9b-9744-4D88E1413DCC}
+{
+	dword	mtl_size;
+	nx3_mtl	mtl_array[mtl_size];
+}
+
+template old_nx3_mesh_frame
+{CB3441E8-5740-4c6e-84AC-455C3AC08DCA}
+{
+	dword   time_value;
+
+	dword	vertex_size;
+	float	vertex_array[vertex_size];
+	
+	dword	normal_size;
+	float	normal_array[normal_size];
+
+	dword	texel_size;
+	float	texel_array[texel_size];
+
+	dword	color_size;
+	dword	color_array[color_size];
+}
+
+template nx3_weight_frame
+{B513DF30-80BE-44f4-980B-84B9D979A607}
+{
+	string  bone_name;
+	dword	weight_size;
+	float	weight_array[weight_size];
+	dword	offset_vector_size;
+	float   offset_vector_array[offset_vector_size];	
+}
+
+template nx3_mesh_frame
+{1C77954B-CDD5-4615-B7AD-F23BD3D0C23E}
+{
+	dword   time_value;
+
+	dword	vertex_size;
+	float	vertex_array[vertex_size];
+	
+	dword	normal_size;
+	float	normal_array[normal_size];
+
+	dword	texel_size;
+	float	texel_array[texel_size];
+	
+	dword	color_size;
+	dword	color_array[color_size];
+
+	dword				bone_size;
+	nx3_weight_frame	bone_block[bone_size];
+	
+	float	mesh_tm[16];	
+}
+
+template nx3_mesh_block
+{C817F7B0-E4E7-40fb-97B3-2B97CC000521}
+{
+	dword			texture_index;	
+	
+	dword			mesh_frame_size;
+	nx3_mesh_frame	mesh_frame_array[mesh_frame_size];	
+
+	dword			index_buffer_size;
+	word			index_buffer_array[index_buffer_size];
+	
+	// 새로 추가된 field
+	// nx3 file에 template member의 갯수가 저장되는 꼼수를 이용해서 추가한 것임 -_-
+	// (이 field를 안쓴 옛날 버전의 경우 member 갯수가 5, 새 버전은 member 갯수가 6개)
+	// 만약 이 file을 다시 save한다면 lightmap_index를 꼭 0으로 setting할 것! (그래야 lightmap 적용 가능!)
+	dword			lightmap_index;
+}
+
+template nx3_ani_block
+{630E91D8-A032-47c1-89F3-2BD5938B336E}
+{
+	dword	time;
+	float	matrix[12];
+}
+
+template nx3_visi_block
+{AA9BA163-BCD9-4eb8-831A-0B656C304995}
+{
+	dword		time;
+	float		visibility;
+}
+
+template nx3_fx_block
+{83A78B40-C401-451d-8AE2-D26BEAB73E5A}
+{
+	dword		time;
+	string		note;
+}
+
+template nx3_fx
+{22C5CCD2-C9FC-4aa8-A63A-6677296313F8}
+{
+	dword			fx_block_size;
+	nx3_fx_block	fx_block_array[fx_block_size];
+}
+
+template nx3_mesh
+{0748DC1A-1DB1-458a-9C7E-B3D46FC4585B}
+{	
+	string			mesh_name;
+
+	dword			material_id;
+	dword			channel_id;
+
+	dword			mesh_block_size;
+	nx3_mesh_block	mesh_block_array[mesh_block_size];
+	
+	dword			ani_block_size;
+	nx3_ani_block	ani_block_array[ani_block_size];
+
+	dword			visi_block_size;
+	nx3_visi_block	visi_block_array[visi_block_size];
+
+	dword			fx_size;
+	nx3_fx			fx_array[fx_size];
+
+	dword			mesh_children_size;
+	nx3_mesh        mesh_children_array[mesh_children_size];
+}
+
+template nx3_new_mesh
+{1718DC1B-1DB1-458a-9C7E-C3D46FC4585B}
+{	
+	string			mesh_name;
+
+	dword			material_id;
+	dword			channel_id;
+
+	dword			mesh_block_size;
+	nx3_mesh_block	mesh_block_array[mesh_block_size];
+	
+	dword			ani_time_size;
+	dword			ani_time_array[ani_time_size];
+	dword			ani_matrix_size;
+	float			ani_matrix_array[ani_matrix_size];
+	
+	dword			visi_time_size;
+	dword			visi_time_array[visi_time_size];
+	float			visi_value_array[visi_time_size];
+		
+	dword			fx_size;
+	nx3_fx			fx_array[fx_size];
+
+	dword			mesh_children_size;
+	nx3_new_mesh    mesh_children_array[mesh_children_size];
+}
+
+template nx3_mesh_tm
+{F09C560E-7328-411e-87A3-EEB165D5F929}
+{
+	string		name;
+	float       tm[16];
+}
+
+template old_nx3_mesh_header
+{D3699024-DB2C-4855-9CB5-FAA4F1CE20D7}
+{
+	dword		mesh_size;
+	nx3_mesh    mesh_array[mesh_size];
+}
+
+template nx3_mesh_header
+{D6D25AEB-A735-4fef-A17D-6E2117498226}
+{
+	dword		mesh_size;
+	nx3_mesh    mesh_array[mesh_size];
+	dword		mesh_tm_size;
+	nx3_mesh_tm mesh_tm_array[mesh_tm_size];
+}
+
+template nx3_new_mesh_header
+{A6D25AEB-A735-1fef-C17D-EE2117498226}
+{
+	dword			mesh_size;
+	nx3_new_mesh    mesh_array[mesh_size];
+	dword			mesh_tm_size;
+	nx3_mesh_tm		mesh_tm_array[mesh_tm_size];
+}
+
+
+template nx3_camera_block
+{3D80819B-0CB9-4da4-9773-4C23198FEB7F}
+{
+	float	mat_object[12];
+	float	mat_target[12];
+	char	has_target;
+	dword	time_value;
+	float	fov;
+	float	dist;
+	float	hither;
+	float	yon;
+	float	near_range;
+	float	far_range;
+}
+
+template nx3_camera
+{55E7B200-BE6C-4719-85E4-DBB4F31654FD}
+{
+	string				block_name;
+	dword				camera_block_size;
+	nx3_camera_block	camera_block_array[camera_block_size];
+}
+
+template nx3_light_block
+{2542DF01-5429-4ae0-8F3E-3A0EC0841DB2}
+{
+	float	mat_object[12];
+	float	mat_target[12];
+	dword	time_value;
+	dword	clr_light;
+	float	intens;
+	float	atten_start;
+	float	atten_end;
+	char	onoff;
+}
+
+template nx3_light
+{690414EE-85A9-40d3-892B-58596A6A20C4}
+{
+	string			block_name;
+	dword			light_type;
+	dword			ambient_light;
+	dword			light_block_size;
+	nx3_light_block	light_block_array[light_block_size];
+}
+
+template nx3_light_header
+{445E49A8-A0F9-4a30-9BF2-4D7FC575B87D}
+{
+	dword		light_size;
+	nx3_light	light_array[light_size];
+}
+
+template nx3_bone_ani
+{B84344DE-A1B6-4aa7-AFD6-22CA8A4B0CEE}
+{
+	string  szName;
+	dword	parent_Index;
+	float	base_tm[16];
+	dword	flag;
+
+	dword   pos_time_size;
+	dword   pos_time_array[pos_time_size];	
+	dword	pos_key_size;
+	float	pos_key_array[pos_key_size];
+	
+	dword   rot_time_size;	
+	dword   rot_time_array[rot_time_size];	
+	dword	rot_key_size;	
+	float	rot_key_array[rot_key_size];
+	dword	child_size;	
+	dword	child_Index_array[child_size];
+}
+
+template nx3_bone_ani_channel
+{81B3C137-B2B8-40b0-A3AD-D149467F5932}
+{
+	string  channel_name;
+	dword	channel_flag;
+	dword   channel_time_span;
+	dword   channel_frame_rate;
+	
+	dword		 bone_ani_size;
+	nx3_bone_ani bone_ani_array[bone_ani_size];
+}
+
+template nx3_bone_ani_header
+{E8F9296B-B9DD-4080-8BC7-6C69E0AA3FEB}
+{
+	dword bone_count;
+	dword channel_count;
+	nx3_bone_ani_channel channel_array[channel_count];
+}
+
+template test_string
+{40BA1DFC-1E0B-49ee-8EDB-91C3952CDD56}
+{
+	string data
+}

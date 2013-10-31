@@ -22,55 +22,56 @@ bl_info = {
 	"name": "Rappelz NX3 format",
 	"author": "Glandu2",
 	"blender": (2, 6, 4),
-	"version": (0,2,0),
+	"version": (0, 2, 0),
 	"location": "File > Import-Export",
 	"description": "Export to a Rappelz NX3 file",
 	"category": "Import-Export"}
 
-if "bpy" in locals():
-    import imp
-    if "export_btrf" in locals():
-        imp.reload(export_btrf)
-    if "import_btrf" in locals():
-        imp.reload(import_btrf)
-
 import bpy
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 from bpy.props import StringProperty
+from . import export_btrf
+from . import import_btrf
+
+if "bpy" in locals():
+	import imp
+	if "export_btrf" in locals():
+		imp.reload(export_btrf)
+	if "import_btrf" in locals():
+		imp.reload(import_btrf)
 
 
 class ExportBTRF(bpy.types.Operator, ExportHelper):
 	bl_idname = "export_mesh.nx3"
 	bl_label = "Export NX3"
 	bl_options = {'PRESET'}
-	
+
 	filepath = StringProperty(
 			subtype='FILE_PATH',
 			)
-	
-	filename_ext	= ".nx3";
-	
+
+	filename_ext = ".nx3"
+
 	def execute(self, context):
-		from . import export_btrf
-		export_btrf.write(self.filepath.encode('cp1252'))
-		return {'FINISHED'};
-		
-	
+		export_btrf.write(self.filepath)
+		return {'FINISHED'}
+
+
 class ImportBTRF(bpy.types.Operator, ImportHelper):
 	bl_idname = "import_mesh.nx3"
 	bl_label = "Import NX3"
 	bl_options = {'PRESET'}
-	
+
 	filepath = StringProperty(
 			subtype='FILE_PATH',
 			)
-	
-	filename_ext	= ".nx3";
-	
+
+	filename_ext = ".nx3"
+
 	def execute(self, context):
-		from . import import_btrf
-		import_btrf.read(self.filepath.encode('cp1252'))
-		return {'FINISHED'};
+		import_btrf.read(self.filepath)
+		return {'FINISHED'}
+
 
 def menu_func_export(self, context):
 	self.layout.operator(ExportBTRF.bl_idname, text="Rappelz NX3 (.nx3)")

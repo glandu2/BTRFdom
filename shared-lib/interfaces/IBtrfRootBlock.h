@@ -50,7 +50,7 @@ public:
 	virtual IBtrfBlock * DLLCALLCONV getBlockById(int id) = 0;
 	virtual int DLLCALLCONV getBlockNum() = 0;
 
-	virtual void DLLCALLCONV dumpToStdout() = 0;
+	virtual void DLLCALLCONV dumpToStdout(FILE* fout) = 0;
 };
 
 #ifdef __cplusplus

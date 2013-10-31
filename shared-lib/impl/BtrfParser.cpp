@@ -98,6 +98,9 @@ BtrfRootBlock *BtrfParser::readFile(const char* filename) {
 		templateIndex = *file->read<short>(2) - 1;
 
 		TmlBlock *templateField = rootBlock->getTmlFile()->getTemplateByGuid(rootBlock->getTemplateGuid(templateIndex));
+		if(!templateField)
+			break;
+
 		templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
 
 		BtrfBlock *block = new BtrfBlock(templateField, rootBlock);

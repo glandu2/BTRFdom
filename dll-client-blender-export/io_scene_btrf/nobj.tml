@@ -1,0 +1,205 @@
+
+template ani_event
+{1247357D-E63F-4316-AB58-E2BA90F06ABC}
+{
+	dword   event_type;
+	dword   event_detail;
+	dword   event_time;
+	string  event_file_name;
+	dword   event_direction;
+	dword   event_property;	
+}
+
+template ani_event_list
+{A77F9538-A44C-42b3-9266-01FDA84E6573}
+{
+	string      ani_name;
+	dword       event_list_size;
+	ani_event	event_list[event_list_size];
+}
+
+template cob_mesh_part_list
+{2F46F4A1-9DC3-4fb4-8A9F-6EED47DD2A39}
+{
+	dword  mesh_part_num;
+	dword  mesh_part_size;
+	string mesh_part_list[mesh_part_size];
+}
+
+template cob_header_v10
+{5103BB2E-ECBA-44ad-B67E-C69A3F415C65}
+{
+	dword              obj_partindex;
+	dword              obj_clan;
+	dword              obj_sex;
+
+	dword              mesh_part_size;
+	cob_mesh_part_list mesh_part_list[mesh_part_size];
+	
+	dword		       ani_list_size;
+	string             ani_list[ani_list_size];
+	
+	dword		       ani_event_size;
+	ani_event_list     ani_event_list[ani_event_size];
+}
+
+template effect_pos
+{C72669AC-858A-48ea-89CA-2E7BB9D60EE2}
+{
+	dword			nIndex;
+	string			effect_pos_name;
+}
+
+template lod_data
+{07BD7F6E-1F3B-45a9-BF27-40CAF95132E6}
+{
+	dword			nLevel;
+	string			lod_name;
+}
+
+template cob_header_v11
+{7AA3937F-5183-40d2-B6AF-CCBDE5C96E55}
+{
+	dword              obj_partindex;
+	dword              obj_clan;
+	dword              obj_sex;
+	
+	dword              render_type;
+	dword              prop_category;
+	dword              shadow_type;
+
+	float			   sel_cube[6];
+	float			   dead_cube[6];	
+	float			   visible_cube[6];	
+	float			   collide_cube[6];		
+
+	dword		       effpos_list_size;
+	effect_pos         effpos_list[effpos_list_size];
+
+	dword		       lod_list_size;
+	lod_data		   lod_list[lod_list_size];
+
+	string             height_file_name;
+	
+	dword		       mesh_list_size;
+	string             mesh_list[mesh_list_size];
+
+	dword              mesh_part_size;
+	cob_mesh_part_list mesh_part_list[mesh_part_size];
+	
+	dword		       ani_list_size;
+	string             ani_list[ani_list_size];
+	
+	dword		       ani_event_size;
+	ani_event_list     ani_event_list[ani_event_size];
+}
+
+template cob_header_v12
+{F1D867AA-07E3-4246-BFB8-6436ED556775}
+{
+	dword              obj_partindex;
+	dword              obj_clan;
+	dword              obj_sex;
+	
+	dword              render_type;
+	dword              prop_category;
+	dword              shadow_type;
+
+	float			   sel_cube[6];
+	float			   dead_cube[6];	
+	float			   visible_cube[6];	
+	float			   collide_cube[6];		
+
+	dword		       effpos_list_size;
+	effect_pos         effpos_list[effpos_list_size];
+
+	dword		       lod_list_size;
+	lod_data		   lod_list[lod_list_size];
+
+	string             height_file_name;
+	string             camera_collision_file_name;
+	
+	dword		       mesh_list_size;
+	string             mesh_list[mesh_list_size];
+
+	dword              mesh_part_size;
+	cob_mesh_part_list mesh_part_list[mesh_part_size];
+	
+	dword		       ani_list_size;
+	string             ani_list[ani_list_size];
+	
+	dword		       ani_event_size;
+	ani_event_list     ani_event_list[ani_event_size];
+}
+
+template seq_texture_data
+{H591W7G6-8EB1-8AX1-8G2K-2WDJ41EH6K73}
+{
+	dword				texture_name_list_size;
+	string				texture_name_list[texture_name_list_size];
+}
+
+template seq_data
+{A368K8L5-6AD2-2ET3-3Q5J-8SSG14JK1Q45}
+{
+	string				str_seq_name;
+	dword				texture_group_size;
+	seq_texture_data	seq_texture_list[texture_group_size];
+}
+
+template nx3_seq_data
+{B452EB91-77E7-A8E2-B519-5DCB38DB3A67}
+{
+	string		str_nx3_name;
+	dword		ani_part_index;
+	dword		seq_size;
+	seq_data	seq_list[seq_size];	
+}
+
+template mesh_texture_data
+{3B73E288-2CD5-77D0-799F-B37E77BB5D99}
+{
+	dword				nx3_size;
+	nx3_seq_data		nx3_seq_list[nx3_size];
+}
+
+template cob_header_v13
+{72E978BB-18F4-5357-D7C9-7547FE667886}
+{
+	dword              obj_partindex;
+	dword              obj_clan;
+	dword              obj_sex;
+	
+	dword              render_type;
+	dword              prop_category;
+	dword              shadow_type;
+
+	float			   sel_cube[6];
+	float			   dead_cube[6];	
+	float			   visible_cube[6];	
+	float			   collide_cube[6];		
+
+	dword		       effpos_list_size;
+	effect_pos         effpos_list[effpos_list_size];
+
+	dword		       lod_list_size;
+	lod_data		   lod_list[lod_list_size];
+
+	string             height_file_name;
+	string             camera_collision_file_name;
+	
+	dword		       mesh_list_size;
+	string             mesh_list[mesh_list_size];
+
+	dword              mesh_part_size;
+	cob_mesh_part_list mesh_part_list[mesh_part_size];
+	
+	dword		       ani_list_size;
+	string             ani_list[ani_list_size];
+	
+	dword		       ani_event_size;
+	ani_event_list     ani_event_list[ani_event_size];
+	
+	dword				mesh_texture_size;
+	mesh_texture_data	mesh_texture_list[mesh_texture_size];
+}

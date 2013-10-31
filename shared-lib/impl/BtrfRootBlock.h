@@ -38,6 +38,7 @@ class BtrfRootBlock : public CImplement<IBtrfRootBlock>
 {
 public:
 	BtrfRootBlock(TmlFile *tmlFile);
+	~BtrfRootBlock();
 
 	COM_BEGIN_DECLARE_IFACE
 	COM_DECLARE_IFACE(IBtrfRootBlock)
@@ -49,20 +50,21 @@ public:
 	virtual int DLLCALLCONV addTemplate(const TemplateGuid& guid, int usedField);
 	virtual const TemplateGuid& DLLCALLCONV getTemplateGuid(int index);
 	virtual int DLLCALLCONV getTemplateUsedField(int index);
-	virtual int DLLCALLCONV getStringNum() { return stringList.size(); }
-	virtual int DLLCALLCONV getTemplateNum() { return templateList.size(); }
+	virtual int DLLCALLCONV getStringNum() { return (int)stringList.size(); }
+	virtual int DLLCALLCONV getTemplateNum() { return (int)templateList.size(); }
 
 	virtual TmlFile * DLLCALLCONV getTmlFile() { return tmlFile; }
 
 	virtual int DLLCALLCONV addBlock(IBtrfBlock *iBlock);
-	virtual BtrfBlock * DLLCALLCONV getBlockByGuid(const TemplateGuid& guid) { try {return blocks.find(guid)->second; } catch(...) { return 0; } }
+	virtual BtrfBlock * DLLCALLCONV getBlockByGuid(const TemplateGuid& guid);
 	virtual BtrfBlock * DLLCALLCONV getBlockById(int id) { return blockList.at(id); }
-	virtual int DLLCALLCONV getBlockNum() { return blockList.size(); }
+	virtual int DLLCALLCONV getBlockNum() { return (int)blockList.size(); }
 
-	virtual void DLLCALLCONV dumpToStdout();
+	virtual void DLLCALLCONV dumpToStdout(FILE* fout);
 
 protected:
 private:
+	const char *marker;
 	void *fileMemory;
 	TmlFile *tmlFile;
 	std::deque<BtrfBlock*> blockList;
