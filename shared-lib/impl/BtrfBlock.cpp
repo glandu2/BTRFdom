@@ -225,7 +225,7 @@ int BtrfBlock::addBlock(IBtrfBlock *block) {
 	}
 
 	reinterpret_cast<std::deque<BtrfBlock*>*>(data)->push_back(static_cast<BtrfBlock*>(block));
-	numElement = reinterpret_cast<std::deque<BtrfBlock*>*>(data)->size();
+	numElement = (int)reinterpret_cast<std::deque<BtrfBlock*>*>(data)->size();
 	return numElement - 1;
 }
 

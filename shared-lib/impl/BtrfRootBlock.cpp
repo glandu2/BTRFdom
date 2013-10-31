@@ -50,12 +50,12 @@ int BtrfRootBlock::addBlock(IBtrfBlock *iBlock) {
 
 	blocks.insert(std::pair<TemplateGuid, BtrfBlock*>(block->getTemplateGuid(), block));
 	blockList.push_back(block);
-	return blockList.size() - 1;
+	return (int)blockList.size() - 1;
 }
 
 int BtrfRootBlock::addString(const char* str) {
 	stringList.push_back(std::string(str));
-	return stringList.size() - 1;
+	return (int)stringList.size() - 1;
 }
 
 const char *BtrfRootBlock::getString(int index) {
@@ -69,7 +69,7 @@ const char *BtrfRootBlock::getString(int index) {
 int BtrfRootBlock::addTemplate(const TemplateGuid& guid, int usedField) {
 	TemplateInfo templateInfo = {guid, usedField};
 	templateList.push_back(templateInfo);
-	return templateList.size() - 1;
+	return (int)templateList.size() - 1;
 }
 
 const TemplateGuid& BtrfRootBlock::getTemplateGuid(int index) {
