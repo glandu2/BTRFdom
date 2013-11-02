@@ -53,6 +53,7 @@ class ExportBTRF(bpy.types.Operator, ExportHelper):
 	filename_ext = ".nx3"
 
 	def execute(self, context):
+		imp.reload(export_btrf)
 		export_btrf.write(self.filepath)
 		return {'FINISHED'}
 
@@ -69,6 +70,7 @@ class ImportBTRF(bpy.types.Operator, ImportHelper):
 	filename_ext = ".nx3"
 
 	def execute(self, context):
+		imp.reload(import_btrf)
 		import_btrf.read(self.filepath)
 		return {'FINISHED'}
 
