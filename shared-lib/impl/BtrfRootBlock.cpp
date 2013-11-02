@@ -102,7 +102,7 @@ void BtrfRootBlock::dumpToStdout(FILE *fout) {
 	for(size_t i = 0; i < blockList.size(); ++i) {
 		BtrfBlock *block = blockList.at(i);
 		fprintf(fout, "Block no %zd\n{\n", i);
-		block->dumpToStdout(fout);
+		block->dumpToStdout(fout, 1);
 		fprintf(fout, "}\n");
 	}
 }

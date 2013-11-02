@@ -258,8 +258,17 @@ const TemplateGuid& BtrfBlock::getTemplateGuid() {
 		return fieldInfo->getTemplateGuid();
 }
 
-void BtrfBlock::dumpToStdout(FILE *fout) {
+void insert_tab(FILE* fout, int indentation) {
 	int i;
+
+	for(i = 0; i < indentation; i++)
+		fprintf(fout, "\t");
+}
+
+void BtrfBlock::dumpToStdout(FILE *fout, int indentation) {
+	int i;
+
+	insert_tab(fout, indentation);
 
 	switch(fieldInfo->getType()) {
 	case ET_Char:
@@ -293,33 +302,48 @@ void BtrfBlock::dumpToStdout(FILE *fout) {
 		break;
 
 	case ET_String:
-		fprintf(fout, "String %s[%d] = \n{\n", getName(), numElement);
+		fprintf(fout, "String %s[%d] = \n", getName(), numElement);
+		insert_tab(fout, indentation);
+		fprintf(fout, "{\n");
 		for(i=0; i<numElement; i++) {
+			insert_tab(fout, indentation+1);
 			if(getDataString(i))
 				fprintf(fout, "\"%s\"\n", getDataString(i));
 			else fprintf(fout, "<NULL>\n");
 		}
+		insert_tab(fout, indentation);
 		fprintf(fout, "}");
 		break;
 
 	case ET_Template: {
 		const TemplateGuid* templateGuid = &getTemplateGuid();
 
-		fprintf(fout, "Template GUID = %08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X %s, %d subfields\n{\n",
+		fprintf(fout, "Template GUID = %08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X %s, %d subfields\n",
 					 (unsigned int)templateGuid->Data1,    (unsigned int)templateGuid->Data2,    (unsigned int)templateGuid->Data3,
 					 (unsigned int)templateGuid->Data4[0], (unsigned int)templateGuid->Data4[1], (unsigned int)templateGuid->Data4[2],
 					 (unsigned int)templateGuid->Data4[3], (unsigned int)templateGuid->Data4[4], (unsigned int)templateGuid->Data4[5],
 					 (unsigned int)templateGuid->Data4[6], (unsigned int)templateGuid->Data4[7], getName(), numElement);
+
+		insert_tab(fout, indentation);
+		fprintf(fout, "{\n");
+
 		for(i=0; i<numElement; i++)
-			getBlock(i)->dumpToStdout(fout);
+			getBlock(i)->dumpToStdout(fout, indentation+1);
+
+		insert_tab(fout, indentation);
 		fprintf(fout, "}");
 		break;
 	}
 
 	case ET_TemplateArray:
-		fprintf(fout, "Template array %s[%d] = \n{\n", getName(), numElement);
+		fprintf(fout, "Template array %s[%d] = \n", getName(), numElement);
+		insert_tab(fout, indentation);
+		fprintf(fout, "{\n");
+
 		for(i=0; i<numElement; i++)
-			getBlock(i)->dumpToStdout(fout);
+			getBlock(i)->dumpToStdout(fout, indentation+1);
+
+		insert_tab(fout, indentation);
 		fprintf(fout, "}");
 		break;
 
