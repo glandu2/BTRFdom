@@ -30,15 +30,9 @@ bl_info = {
 import bpy
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 from bpy.props import StringProperty
-from . import export_btrf
-from . import import_btrf
-
-if "bpy" in locals():
-	import imp
-	if "export_btrf" in locals():
-		imp.reload(export_btrf)
-	if "import_btrf" in locals():
-		imp.reload(import_btrf)
+from . import export_nx3
+from . import import_nx3
+import imp
 
 
 class ExportBTRF(bpy.types.Operator, ExportHelper):
@@ -53,8 +47,8 @@ class ExportBTRF(bpy.types.Operator, ExportHelper):
 	filename_ext = ".nx3"
 
 	def execute(self, context):
-		imp.reload(export_btrf)
-		export_btrf.write(self.filepath)
+		imp.reload(export_nx3)
+		export_nx3.write(self.filepath)
 		return {'FINISHED'}
 
 
@@ -70,8 +64,8 @@ class ImportBTRF(bpy.types.Operator, ImportHelper):
 	filename_ext = ".nx3"
 
 	def execute(self, context):
-		imp.reload(import_btrf)
-		import_btrf.read(self.filepath)
+		imp.reload(import_nx3)
+		import_nx3.read(self.filepath)
 		return {'FINISHED'}
 
 
