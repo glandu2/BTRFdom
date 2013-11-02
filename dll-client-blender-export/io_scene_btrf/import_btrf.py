@@ -160,6 +160,14 @@ def error(str):
 	raise(str)
 
 
+def create_anim_fcurve(action, data_path, index, count):
+	keyframe = action.fcurves.new(data_path, index)
+	keyframe.keyframe_points.add(count)
+	for point in keyframe.keyframe_points:
+		point.interpolation = 'LINEAR'
+	return keyframe.keyframe_points
+
+
 def check_version(rootBlock):
 	block = rootBlock.getBlockByGuid(nx3_version_header_guid.bytes_le)
 
@@ -290,6 +298,11 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 	else:
 		has_texture = False
 
+	if len(normal_data) > 0:
+		has_normals = True
+	else:
+		has_normals = False
+
 	if has_texture:
 		try:
 			material = mtl_textures[texture_index][0]
@@ -311,7 +324,8 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 	vertices = []
 	for vertex in vertex_data:
 		vert = bm.verts.new(vertex)
-		vert.normal = normal_data[vert.index]
+		if has_normals:
+			vert.normal = normal_data[vert.index]
 		vertices.append(vert)
 
 	bm.verts.index_update()
@@ -363,7 +377,10 @@ def read_mesh(mesh_template, materials, armature):
 
 	mesh_block_array = mesh_template.getBlock(3)
 
-	# animation, visi, childrens are not supported
+	# visi is not supported
+	ani_time_array = [mesh_template.getBlock(4).getDataInt(i) for i in range(mesh_template.getBlock(4).getElementNumber())]
+	ani_matrix_array = [mesh_template.getBlock(5).getDataFloat(i) for i in range(mesh_template.getBlock(5).getElementNumber())]
+	mesh_children_array = [mesh_template.getBlock(9).getBlock(i) for i in range(mesh_template.getBlock(9).getElementNumber())]
 
 	mesh = bpy.data.meshes.new(name)
 	mesh_object = bpy.data.objects.new(name, mesh)
@@ -371,6 +388,8 @@ def read_mesh(mesh_template, materials, armature):
 	mesh_object.parent = armature
 	armature_modifier = mesh_object.modifiers.new(armature.name, 'ARMATURE')
 	armature_modifier.object = armature
+
+	# mesh data handling
 
 	bm = bmesh.new()
 	bones_weight = []
@@ -382,6 +401,8 @@ def read_mesh(mesh_template, materials, armature):
 	bm.to_mesh(mesh)
 	bm.free()
 	del bm
+
+	# bones weights handling
 
 	bpy.ops.object.mode_set(mode='EDIT')
 
@@ -403,6 +424,61 @@ def read_mesh(mesh_template, materials, armature):
 	armature.data.update_tag()
 
 	bpy.ops.object.mode_set(mode='OBJECT')
+
+	#animation handling
+	if len(ani_time_array) > 0:
+		mesh_object.rotation_mode = 'QUATERNION'
+		anim_data = mesh_object.animation_data_create()
+		anim_data.action = bpy.data.actions.new(name + "_matrix_anim")
+		anim_action = anim_data.action
+
+		location_keyframes = [None] * 3
+		location_keyframes[0] = create_anim_fcurve(anim_action, "location", 0, len(ani_time_array))
+		location_keyframes[1] = create_anim_fcurve(anim_action, "location", 1, len(ani_time_array))
+		location_keyframes[2] = create_anim_fcurve(anim_action, "location", 2, len(ani_time_array))
+
+		rotation_keyframes = [None] * 4
+		rotation_keyframes[0] = create_anim_fcurve(anim_action, "rotation_quaternion", 0, len(ani_time_array))
+		rotation_keyframes[1] = create_anim_fcurve(anim_action, "rotation_quaternion", 1, len(ani_time_array))
+		rotation_keyframes[2] = create_anim_fcurve(anim_action, "rotation_quaternion", 2, len(ani_time_array))
+		rotation_keyframes[3] = create_anim_fcurve(anim_action, "rotation_quaternion", 3, len(ani_time_array))
+
+		scale_keyframes = [None] * 3
+		scale_keyframes[0] = create_anim_fcurve(anim_action, "scale", 0, len(ani_time_array))
+		scale_keyframes[1] = create_anim_fcurve(anim_action, "scale", 1, len(ani_time_array))
+		scale_keyframes[2] = create_anim_fcurve(anim_action, "scale", 2, len(ani_time_array))
+
+		def time_to_frame(time):
+			return int(time / 1000 * bpy.context.scene.render.fps * bpy.context.scene.render.fps_base)
+
+		for i, time in enumerate(ani_time_array):
+			frame_id = time_to_frame(time)
+			location = mathutils.Vector((ani_matrix_array[i * 12 + 9], ani_matrix_array[i * 12 + 10], ani_matrix_array[i * 12 + 11]))
+
+			rot_matrix = mathutils.Matrix(((ani_matrix_array[i * 12 + 0], ani_matrix_array[i * 12 + 3], ani_matrix_array[i * 12 + 6]),
+											(ani_matrix_array[i * 12 + 1], ani_matrix_array[i * 12 + 4], ani_matrix_array[i * 12 + 7]),
+											(ani_matrix_array[i * 12 + 2], ani_matrix_array[i * 12 + 5], ani_matrix_array[i * 12 + 8])))
+
+			location_keyframes[0][i].co = frame_id, location[0]
+			location_keyframes[1][i].co = frame_id, location[1]
+			location_keyframes[2][i].co = frame_id, location[2]
+
+			rotation_keyframes[0][i].co = frame_id, rot_matrix.to_quaternion()[0]
+			rotation_keyframes[1][i].co = frame_id, rot_matrix.to_quaternion()[1]
+			rotation_keyframes[2][i].co = frame_id, rot_matrix.to_quaternion()[2]
+			rotation_keyframes[3][i].co = frame_id, rot_matrix.to_quaternion()[3]
+
+			scale_keyframes[0][i].co = frame_id, rot_matrix.to_scale()[0]
+			scale_keyframes[1][i].co = frame_id, rot_matrix.to_scale()[1]
+			scale_keyframes[2][i].co = frame_id, rot_matrix.to_scale()[2]
+
+		bpy.context.scene.frame_end = max(bpy.context.scene.frame_end, time_to_frame(ani_time_array[len(ani_time_array) - 1]))
+
+	# children handling (recursive)
+	for children in mesh_children_array:
+		read_mesh(children, materials, armature).parent = mesh_object
+
+	return mesh_object
 
 
 def read_bones_tm_matrix(bone_tm, armature):
