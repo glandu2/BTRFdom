@@ -207,6 +207,14 @@ def read_materials(rootBlock, file_dir):
 			texture_name = os.path.basename(texture_name.replace('\\', '/'))
 
 			texture_file = file_dir + '/' + texture_name
+			if not os.path.exists(texture_file):
+				texture_file = file_dir + '/' + os.path.splitext(texture_name)[0] + ".dds"
+			if not os.path.exists(texture_file):
+				texture_file = file_dir + '/' + os.path.splitext(texture_name)[0] + ".tga"
+			if not os.path.exists(texture_file):
+				texture_file = file_dir + '/' + os.path.splitext(texture_name)[0] + ".png"
+
+			texture_name = os.path.basename(texture_file)
 
 			# info("Reading material %s with texture %s" % (mtl_name, texture_file))
 
@@ -362,6 +370,10 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 	return read_bones_weight(bone_block_template_array, vertices)
 
 
+def time_to_frame(time):
+	return int(time / 5000 * bpy.context.scene.render.fps * bpy.context.scene.render.fps_base)
+
+
 def read_mesh(mesh_template, materials, armature):
 	name = mesh_template.getBlock(0).getDataString(0)
 	material_id = mesh_template.getBlock(1).getDataInt(0)
@@ -449,9 +461,6 @@ def read_mesh(mesh_template, materials, armature):
 		scale_keyframes[0] = create_anim_fcurve(anim_action, "scale", 0, len(ani_time_array))
 		scale_keyframes[1] = create_anim_fcurve(anim_action, "scale", 1, len(ani_time_array))
 		scale_keyframes[2] = create_anim_fcurve(anim_action, "scale", 2, len(ani_time_array))
-
-		def time_to_frame(time):
-			return int(time / 5000 * bpy.context.scene.render.fps * bpy.context.scene.render.fps_base)
 
 		for i, time in enumerate(ani_time_array):
 			frame_id = time_to_frame(time)
