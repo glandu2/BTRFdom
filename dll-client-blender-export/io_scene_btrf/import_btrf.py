@@ -196,9 +196,9 @@ def read_materials(rootBlock, file_dir):
 			mtl_name = material_data_block.getBlock(0).getDataString(0)
 			texture_name = material_data_block.getBlock(1).getDataString(0)
 			mtl_id = material_data_block.getBlock(2).getDataInt(0)
-			channel_id = material_data_block.getBlock(3).getDataInt(0)
+			# channel_id = material_data_block.getBlock(3).getDataInt(0)
 			# power = getDataFloat(getBlock(material_data_block, 4), 0)
-			# self_illumi = getDataFloat(getBlock(material_data_block, 5), 0)
+			self_illumi = material_data_block.getBlock(5).getDataFloat(0)
 			# smoothing = getDataChar(getBlock(material_data_block, 6), 0)
 			# ambient = getDataInt(getBlock(material_data_block, 7), 0)
 			# diffuse = getDataInt(getBlock(material_data_block, 8), 0)
@@ -208,26 +208,22 @@ def read_materials(rootBlock, file_dir):
 
 			texture_file = file_dir + '/' + texture_name
 
-			# info("Reading material %s with texture %s" % (mtl_name, texture_file))
-
-			material = bpy.data.materials.new(mtl_name)
-
 			try:
 				image = bpy.data.images.load(texture_file)
 			except:
 				image = None
 				warn("Could not load texture file %s" % texture_file)
 
-			if channel_id not in materials:
-				materials[channel_id] = {}
+			#if channel_id not in materials:
+				#materials[0] = {}
 
-			if mtl_id not in materials[channel_id]:
-				materials[channel_id][mtl_id] = []
+			if mtl_id not in materials:
+				material = bpy.data.materials.new(mtl_name)
+				materials[mtl_id] = material
+				material.emit = self_illumi
 
-			materials[channel_id][mtl_id].append((material, image))
-
-			texture_slot = material.texture_slots.add()
 			if image:
+				texture_slot = material.texture_slots.add()
 				texture = bpy.data.textures.new(texture_name, 'IMAGE')
 				texture.image = image
 				texture.use_alpha = True
@@ -236,8 +232,6 @@ def read_materials(rootBlock, file_dir):
 				texture_slot.texture_coords = 'UV'
 				texture_slot.use_map_color_diffuse = True
 				texture_slot.use_map_color_emission = True
-			else:
-				texture_slot.texture = None
 
 	return materials
 
@@ -261,7 +255,7 @@ def read_bones_weight(bone_block_template_array, vertices):
 	return bones_weight
 
 
-def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
+def read_mesh_block(mesh_block_template, mesh_object, bm, material_id, texture_slots):
 	texture_index = mesh_block_template.getBlock(0).getDataInt(0)
 	if mesh_block_template.getBlock(1).getElementNumber() == 0:
 		print("Empty mesh block, ignoring")
@@ -293,33 +287,19 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 	texel_data = [(texel_array[int(i * 2)], 1 - texel_array[int(i * 2 + 1)]) for i in range(int(mesh_data.getBlock(3).getElementNumber() / 2))]
 	face_array = [(face_array[int(i * 3 + 2)], face_array[int(i * 3 + 1)], face_array[int(i * 3)]) for i in range(int(mesh_block_template.getBlock(2).getElementNumber() / 3))]
 
-	if len(texel_data) > 0 and mtl_textures is not None:
-		has_texture = True
-	else:
-		has_texture = False
-
 	if len(normal_data) > 0:
 		has_normals = True
 	else:
 		has_normals = False
 
-	if has_texture:
+	if texture_slots:
 		try:
-			material = mtl_textures[texture_index][0]
-			material_image = mtl_textures[texture_index][1]
+			material_image = texture_slots[texture_index].texture.image
 		except:
 			warn("Material %d not found for object %s" % (texture_index, mesh_object.name))
-			material = None
 			material_image = None
-			has_texture = False
-
-	if has_texture:
-		try:
-			material_names = [m.name for m in mesh_object.data.materials]
-			material_id = material_names.index(material.name)
-		except ValueError:
-			mesh_object.data.materials.append(bpy.data.materials[material.name])
-			material_id = len(mesh_object.data.materials) - 1
+	else:
+		material_image = None
 
 	vertices = []
 	for vertex in vertex_data:
@@ -330,7 +310,7 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 
 	bm.verts.index_update()
 
-	if has_texture:
+	if len(texel_data) > 0 or material_image:
 		uv_layer = bm.loops.layers.uv.verify()
 		tex_layer = bm.faces.layers.tex.verify()
 
@@ -339,9 +319,11 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 			face = bm.faces.new([vertices[i] for i in face_indices])
 		except:
 			continue
-		if has_texture:
+		if material_id:
 			face.material_index = material_id
+		if material_image:
 			face[tex_layer].image = material_image
+		if len(texel_data) > 0:
 			face.loops[0][uv_layer].uv = texel_data[face_indices[1]]
 			face.loops[1][uv_layer].uv = texel_data[face_indices[2]]
 			face.loops[2][uv_layer].uv = texel_data[face_indices[0]]
@@ -351,7 +333,7 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 
 	mesh_object.matrix_world = matrix
 
-	if has_texture:
+	if len(texel_data) > 0 or material_image:
 		del uv_layer
 		del tex_layer
 
@@ -366,20 +348,23 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 def read_mesh(mesh_template, materials, armature):
 	name = mesh_template.getBlock(0).getDataString(0)
 	material_id = mesh_template.getBlock(1).getDataInt(0)
-	channel_id = mesh_template.getBlock(2).getDataInt(0)
+	# channel_id = mesh_template.getBlock(2).getDataInt(0)
 
 	try:
-		mtl_textures = materials[channel_id][material_id]
+		material = materials[material_id]
 	except:
-		mtl_textures = None
+		material = None
 		if material_id != -1:
-			warn("Unable to find material for mesh %s: channel_id %d, mtl_id %d" % (name, channel_id, material_id))
+			warn("Unable to find material for mesh %s: mtl_id %d" % (name, material_id))
 
 	mesh_block_array = mesh_template.getBlock(3)
 
-	# visi is not supported
 	ani_time_array = [mesh_template.getBlock(4).getDataInt(i) for i in range(mesh_template.getBlock(4).getElementNumber())]
 	ani_matrix_array = [mesh_template.getBlock(5).getDataFloat(i) for i in range(mesh_template.getBlock(5).getElementNumber())]
+
+	visi_time_array = [mesh_template.getBlock(6).getDataInt(i) for i in range(mesh_template.getBlock(6).getElementNumber())]
+	visi_value_array = [mesh_template.getBlock(7).getDataFloat(i) for i in range(mesh_template.getBlock(7).getElementNumber())]
+
 	mesh_children_array = [mesh_template.getBlock(9).getBlock(i) for i in range(mesh_template.getBlock(9).getElementNumber())]
 
 	mesh = bpy.data.meshes.new(name)
@@ -389,6 +374,19 @@ def read_mesh(mesh_template, materials, armature):
 	armature_modifier = mesh_object.modifiers.new(armature.name, 'ARMATURE')
 	armature_modifier.object = armature
 
+	if material:
+		mesh_object.data.materials.append(material)
+		material_id = len(mesh_object.data.materials) - 1
+		texture_slots = material.texture_slots
+	elif len(visi_time_array) > 0:
+		material = bpy.data.materials.new(name + "_material")
+		mesh_object.data.materials.append(material)
+		material_id = len(mesh_object.data.materials) - 1
+		texture_slots = material.texture_slots
+	else:
+		texture_slots = None
+		material_id = None
+
 	# mesh data handling
 
 	bm = bmesh.new()
@@ -396,7 +394,7 @@ def read_mesh(mesh_template, materials, armature):
 
 	mesh_blocks = [mesh_block_array.getBlock(i) for i in range(mesh_block_array.getElementNumber())]
 	for i, mesh_block in enumerate(mesh_blocks):
-		bones_weight.append(read_mesh_block(mesh_block, mesh_object, bm, mtl_textures))
+		bones_weight.append(read_mesh_block(mesh_block, mesh_object, bm, material_id, texture_slots))
 
 	bm.to_mesh(mesh)
 	bm.free()
@@ -449,7 +447,7 @@ def read_mesh(mesh_template, materials, armature):
 		scale_keyframes[2] = create_anim_fcurve(anim_action, "scale", 2, len(ani_time_array))
 
 		def time_to_frame(time):
-			return int(time / 1000 * bpy.context.scene.render.fps * bpy.context.scene.render.fps_base)
+			return int(time / 5000 * bpy.context.scene.render.fps * bpy.context.scene.render.fps_base)
 
 		for i, time in enumerate(ani_time_array):
 			frame_id = time_to_frame(time)
@@ -472,7 +470,23 @@ def read_mesh(mesh_template, materials, armature):
 			scale_keyframes[1][i].co = frame_id, rot_matrix.to_scale()[1]
 			scale_keyframes[2][i].co = frame_id, rot_matrix.to_scale()[2]
 
-		bpy.context.scene.frame_end = max(bpy.context.scene.frame_end, time_to_frame(ani_time_array[len(ani_time_array) - 1]))
+		bpy.context.scene.frame_end = time_to_frame(ani_time_array[len(ani_time_array) - 1])
+
+	# visibility handling (object transparency)
+	if len(visi_time_array) > 0:
+		material.use_transparency = True
+		material.transparency_method = 'Z_TRANSPARENCY'
+		anim_data = material.animation_data_create()
+		anim_data.action = bpy.data.actions.new(name + "_visibility_anim")
+		anim_action = anim_data.action
+
+		visibility_keyframes = create_anim_fcurve(anim_action, "alpha", 0, len(visi_time_array))
+
+		for i, time in enumerate(visi_time_array):
+			frame_id = time_to_frame(time)
+			visibility_keyframes[i].co = frame_id, visi_value_array[i]
+
+		bpy.context.scene.frame_end = max(bpy.context.scene.frame_end, time_to_frame(visi_time_array[len(visi_time_array) - 1]))
 
 	# children handling (recursive)
 	for children in mesh_children_array:
