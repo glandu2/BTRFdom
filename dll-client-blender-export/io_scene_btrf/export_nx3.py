@@ -130,6 +130,8 @@ import bpy
 import uuid
 from .btrfdom import BtrfParser, TmlFile, BtrfRootBlock, BtrfBlock
 import os
+import binascii
+import struct
 
 nx3_version_header_guid = uuid.UUID('{81BCE021-AD76-346f-9C7D-19885FD118B6}')
 
@@ -171,7 +173,18 @@ class VertexInfo:
 		self.normal = normal
 		self.texel = texel
 
-	def equals(self, other):
+	def __hash__(self):
+		crc = 0
+		for co in self.vertex:
+			crc = binascii.crc32(struct.pack("l", int(co * 1000)), crc)
+		for co in self.normal:
+			crc = binascii.crc32(struct.pack("l", int(co * 1000)), crc)
+		for co in self.texel:
+			crc = binascii.crc32(struct.pack("l", int(co * 1000)), crc)
+
+		return crc
+
+	def __eq__(self, other):
 		return(isinstance(other, self.__class__)
 			and abs(self.vertex[0] - other.vertex[0]) < 0.0001
 			and abs(self.vertex[1] - other.vertex[1]) < 0.0001
@@ -478,17 +491,17 @@ def get_nx3_mesh_frame(tmlFile, rootBlock, mesh_matrix, vertex_info_array, verte
 	block.create(fieldInfo, rootBlock)
 
 	time_value = 0
-	vertex_array = [coord for vertex_info in vertex_info_array for coord in vertex_info.vertex]
-	normal_array = [coord for vertex_info in vertex_info_array for coord in vertex_info.normal]
+	vertex_array = [coord for vertex_info in list(vertex_info_array.keys()) for coord in vertex_info.vertex]
+	normal_array = [coord for vertex_info in list(vertex_info_array.keys()) for coord in vertex_info.normal]
 
 	if has_texel is True:
-		texel_array = [(vertex_info.texel[0], 1 - vertex_info.texel[1]) for vertex_info in vertex_info_array]
+		texel_array = [(vertex_info.texel[0], 1 - vertex_info.texel[1]) for vertex_info in list(vertex_info_array.keys())]
 	else:
 		texel_array = []
 
 	color_array = []
 
-	vertex_indices = [vertex_info.vertex_index for vertex_info in vertex_info_array]
+	vertex_indices = [vertex_info.vertex_index for vertex_info in list(vertex_info_array.keys())]
 	bone_block = [get_nx3_weight_frame(tmlFile, rootBlock, vertex_group, vertex_indices) for vertex_group in vertex_groups]
 	mesh_tm = [val for vect in mesh_matrix.transposed() for val in vect]
 
@@ -560,7 +573,7 @@ def get_nx3_mesh_block(tmlFile, rootBlock, mesh_object, mesh_data, mesh_block_fa
 		texture_index = 0
 
 	vertex_groups = mesh_object.vertex_groups
-	vertex_info_array = []
+	vertex_info_array = {}
 	index_array = []
 
 	for face in mesh_block_faces:
@@ -571,11 +584,12 @@ def get_nx3_mesh_block(tmlFile, rootBlock, mesh_object, mesh_data, mesh_block_fa
 			else:
 				vertex_info = VertexInfo(vertex_index, mesh_data.vertices[vertex_index].co, mesh_data.vertices[vertex_index].normal)
 
-			index = index_of_vertex_info(vertex_info_array, vertex_info)
-			if index == -1:
+			#index = index_of_vertex_info(vertex_info_array, vertex_info)
+			try:
+				index_array.append(vertex_info_array[vertex_info])
+			except:
 				index = len(vertex_info_array)
-				vertex_info_array.append(vertex_info)
-			index_array.append(index)
+				vertex_info_array[vertex_info] = index
 
 	mesh_frame = get_nx3_mesh_frame(tmlFile, rootBlock, mesh_object.matrix_world, vertex_info_array, vertex_groups, has_texture)
 
