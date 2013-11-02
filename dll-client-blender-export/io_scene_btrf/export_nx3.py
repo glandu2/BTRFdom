@@ -207,6 +207,24 @@ def error(str):
 	raise(str)
 
 
+def get_parent_mesh(mesh_object):
+	while mesh_object.parent is not None:
+		mesh_object = mesh_object.parent
+		if mesh_object.type == 'MESH':
+			return mesh_object
+
+
+def get_children_meshes(blender_object):
+	children = []
+	for child in blender_object.children:
+		if child.type == 'MESH':
+			children.append(child)
+		else:
+			children.extend(get_children_meshes(child))
+
+	return children
+
+
 def get_materials_bones_from_object(blender_object, materials_info, bones_info):
 	if blender_object.type == 'MESH':
 		for material_index, material in enumerate(blender_object.material_slots):
@@ -298,7 +316,7 @@ def get_mtl_block(tmlFile, rootBlock, material_info):
 	mtl_id = material_info.material_id
 	channel_id = material_info.channel_id
 	power = 0
-	self_illumi = 0
+	self_illumi = material_info.material.emit
 	smoothing = 0
 	ambient = 0
 	diffuse = 0
@@ -620,7 +638,8 @@ def get_nx3_new_mesh(tmlFile, rootBlock, mesh_object, materials_info):
 	visi_time_array = []
 	visi_value_array = []
 	#fx_array = []
-	#mesh_children_array = []
+	children_objects = get_children_meshes(mesh_object)
+	mesh_children_array = [get_nx3_new_mesh(tmlFile, rootBlock, child_object, materials_info) for child_object in children_objects]
 
 	#string  mesh_name
 	subBlock = BtrfBlock()
@@ -679,7 +698,8 @@ def get_nx3_new_mesh(tmlFile, rootBlock, mesh_object, materials_info):
 
 	#nx3_new_mesh mesh_children_array[]
 	subBlock.create(fieldInfo.getField(9), rootBlock)
-	#unsupported, nothing to add
+	for i in range(len(mesh_children_array)):
+		subBlock.addBlock(mesh_children_array[i])
 	block.addBlock(subBlock)
 
 	bpy.data.meshes.remove(mesh_data)
@@ -714,7 +734,7 @@ def write_nx3_new_mesh_header(tmlFile, rootBlock, bones_info, materials_info):
 	block = BtrfBlock()
 	block.create(fieldInfo, rootBlock)
 
-	objects = [obj for obj in bpy.data.objects if obj.type == 'MESH']
+	objects = [obj for obj in bpy.data.objects if obj.type == 'MESH' and get_parent_mesh(obj) is None]
 
 	mesh_array = [get_nx3_new_mesh(tmlFile, rootBlock, mesh_object, materials_info) for mesh_object in objects]
 	bone_tm_array = [get_nx3_bone_tm(tmlFile, rootBlock, bone_info) for bone_info in list(bones_info.values())]

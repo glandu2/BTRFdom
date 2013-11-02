@@ -544,7 +544,7 @@ def read_mesh_header(rootBlock, materials, filename):
 
 	if mesh_template_array.getElementNumber() == 0:
 		print("No mesh in the file !")
-		return
+		return None
 
 	# Create armature with the filename as name, then an object with the same name
 	armature_data = bpy.data.armatures.new(filename)
@@ -564,10 +564,24 @@ def read_mesh_header(rootBlock, materials, filename):
 		read_bones_tm_matrix(bone_tm, armature)
 	bpy.ops.object.mode_set(mode='OBJECT')
 
+	return armature
 
-def read(nx3_filename):
+
+def read_nx3_file(parser, nx3_filename):
 	info("Reading file %s" % nx3_filename)
 
+	rootBlock = parser.readFile(nx3_filename)
+
+	if rootBlock is None:
+		error("Could not read nx3 file")
+		return
+
+	#check_version(rootBlock)
+	materials = read_materials(rootBlock, os.path.dirname(nx3_filename))
+	return read_mesh_header(rootBlock, materials, os.path.basename(nx3_filename))
+
+
+def read(nx3_filename):
 	script_dir = os.path.dirname(os.path.abspath(__file__))
 
 	tmlFile = TmlFile()
@@ -577,12 +591,5 @@ def read(nx3_filename):
 
 	parser = BtrfParser()
 	parser.create(tmlFile)
-	rootBlock = parser.readFile(nx3_filename)
 
-	if rootBlock is None:
-		error("Could not read nx3 file")
-		return
-
-	#check_version(rootBlock)
-	materials = read_materials(rootBlock, os.path.dirname(nx3_filename))
-	read_mesh_header(rootBlock, materials, os.path.basename(nx3_filename))
+	read_nx3_file(parser, nx3_filename)
