@@ -221,6 +221,10 @@ def read_materials(rootBlock, file_dir):
 				material = bpy.data.materials.new(mtl_name)
 				materials[mtl_id] = material
 				material.emit = self_illumi
+				material.use_face_texture = True
+				material.use_face_texture_alpha = True
+			else:
+				material = materials[mtl_id]
 
 			if image:
 				texture_slot = material.texture_slots.add()
