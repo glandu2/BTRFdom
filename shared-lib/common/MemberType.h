@@ -60,8 +60,20 @@ enum ElementType {
 	ET_Float = 0x5,
 	ET_String = 0x7,
 	ET_Template = 0x9,
-	ET_TemplateArray = 0x12,
-	ET_Array = 0x13
+	ET_Dict = 0x0A,
+	//ET_TemplateArray = 0x12,
+	ET_Array = 0x13,
+
+	//_ARRAYMASK = 0x80,
+	//ET_CharArray = 0x81,
+	//ET_WordArray = 0x82,
+	//ET_DWordArray = 0x83,
+	//LLONG_ARRAY = 0x84,
+	//ET_FloatArray = 0x85,
+	//ET_DoubleArray = 0x86,
+	//ET_StringArray = 0x87,
+	//ET_WStringArray = 0x88,
+	ET_TemplateArray = 0x89,
 
 
 	/*ET_QWord = 0x4,

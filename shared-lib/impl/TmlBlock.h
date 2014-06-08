@@ -47,7 +47,15 @@ public:
 	virtual bool DLLCALLCONV getHasVariableSize() { return hasVariableSize; }
 
 public:
-	bool parseFile(FILE *file, TmlFile *tmlFile);
+	bool parseFile(std::istream *file, TmlFile *tmlFile);
+	void setContent(const char* name, ElementType type, int numElement, bool hasVariableSize) {
+		this->name = name;
+		memset(&guid, 0, sizeof(guid));
+		this->elementType = type;
+		this->numElement = numElement;
+		this->hasVariableSize = hasVariableSize;
+	}
+	void addField(TmlBlock* block) { subfields.push_back(block); numElement++; }
 
 protected:
 private:

@@ -62,6 +62,7 @@ void BtrfBlock::initData() {
 	switch(fieldInfo->getType()) {
 	case ET_TemplateArray:
 	case ET_Template:
+	case ET_Dict:
 		this->data = new std::deque<BtrfBlock*>();
 		this->allocatedData = true;
 		break;
@@ -115,6 +116,7 @@ void BtrfBlock::freeData() {
 		switch(fieldInfo->getType()) {
 		case ET_TemplateArray:
 		case ET_Template:
+		case ET_Dict:
 			delete reinterpret_cast<std::deque<BtrfBlock*>*>(data);
 			allocatedData = false;
 			break;
@@ -205,7 +207,7 @@ template<typename T> T* BtrfBlock::getDataPtr() {
 int BtrfBlock::addBlock(IBtrfBlock *block) {
 	if(block->getType() == ET_Template)
 		checkIndexType(ET_TemplateArray, -1);
-	else
+	else if(getType() != ET_Dict)
 		checkIndexType(ET_Template, -1);
 
 	if(block->getType() == ET_TemplateArray && block->getFieldInfo()->getHasVariableSize() && block->getTemplateId() == -1) {
@@ -232,8 +234,10 @@ int BtrfBlock::addBlock(IBtrfBlock *block) {
 BtrfBlock* BtrfBlock::getBlock(int index) {
 	if(getType() == ET_Template)
 		checkIndexType(ET_Template, index);
-	else
+	else if(getType() == ET_TemplateArray)
 		checkIndexType(ET_TemplateArray, index);
+	else
+		checkIndexType(ET_Dict, index);
 
 	return reinterpret_cast<std::deque<BtrfBlock*>*>(data)->at(index);
 }
@@ -337,6 +341,18 @@ void BtrfBlock::dumpToStdout(FILE *fout, int indentation) {
 
 	case ET_TemplateArray:
 		fprintf(fout, "Template array %s[%d] = \n", getName(), numElement);
+		insert_tab(fout, indentation);
+		fprintf(fout, "{\n");
+
+		for(i=0; i<numElement; i++)
+			getBlock(i)->dumpToStdout(fout, indentation+1);
+
+		insert_tab(fout, indentation);
+		fprintf(fout, "}");
+		break;
+
+	case ET_Dict:
+		fprintf(fout, "dict %s = \n", getName());
 		insert_tab(fout, indentation);
 		fprintf(fout, "{\n");
 

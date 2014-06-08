@@ -37,10 +37,14 @@ class TmlFile : public CImplement<ITmlFile>
 		COM_END_DECLARE_IFACE
 
 		virtual bool DLLCALLCONV parseFile(const char *file);
+		virtual void DLLCALLCONV parseFile(std::istream* data);
 		virtual TmlBlock* DLLCALLCONV getTemplateByGuid(const TemplateGuid& guid);
 		virtual TmlBlock* DLLCALLCONV getTemplateByName(const char* name);
 
 		virtual void DLLCALLCONV addTemplate(ITmlBlock *iBlock);
+
+		//helper functions for known rappelz TML
+		virtual void DLLCALLCONV loadNx3();
 
 	private:
 		std::unordered_map<TemplateGuid, TmlBlock*> templatesByGuid;

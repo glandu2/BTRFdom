@@ -123,7 +123,7 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 
 	ElementType elementType = tmlField->getType();
 
-	if(elementType != ET_Template && (elementType == ET_TemplateArray || block->getFieldInfo()->getHasVariableSize()))
+	if(elementType != ET_Template && (elementType == ET_TemplateArray || block->getFieldInfo()->getHasVariableSize() || elementType == ET_Dict))
 		blockSize = *file->read<int>(4);
 
 	switch(elementType) {
@@ -132,8 +132,12 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 			templateIndex = *file->read<short>(2) - 1;
 
 			//block->setTemplateId(templateIndex);
-			TmlBlock *templateField = block->getFieldInfo()->getField(0);
+			//TmlBlock *templateField = block->getFieldInfo()->getField(0);
+			TmlBlock *templateField = rootBlock->getTmlFile()->getTemplateByGuid(rootBlock->getTemplateGuid(templateIndex));
 			templateField->setFieldCount(rootBlock->getTemplateUsedField(templateIndex));
+
+			if(tmlField->getFieldCount() == 0)
+				tmlField->addField(templateField);
 
 			int subBlockCount = *file->read<int>(4);
 
@@ -161,6 +165,24 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 			block->addBlock(subBlock);
 		}
 		break;
+
+	case ET_Dict: {
+		int subBlockCount = *file->read<int>(4);
+		for(i = 0; i < subBlockCount; i++) {
+			short stringId = *file->read<short>(3);
+			unsigned char subElementType = *file->read<unsigned char>(1);
+
+			TmlBlock* templateField = new TmlBlock();
+			templateField->setContent(rootBlock->getString(stringId-1), (subElementType != ET_TemplateArray)? ElementType(subElementType & 0x7F) : ET_TemplateArray, ((subElementType & 0x80) == 0x80)? 0 : 1, (subElementType & 0x80) == 0x80);
+			BtrfBlock *subBlock = new BtrfBlock(templateField, rootBlock);
+//			if(templateField->getHasVariableSize())
+//				file->read<int>(4);	//elementSize
+			readBlock(subBlock, templateField);
+
+			block->addBlock(subBlock);
+		}
+		break;
+	}
 
 	case ET_Char:
 	case ET_UChar:
@@ -331,11 +353,14 @@ void BtrfParser::writeFile(const char* filename, IBtrfRootBlock *iRootBlock) {
 void BtrfParser::writeBlock(FILE* file, BtrfBlock *block) {
 	int i, value;
 	int blockSizePosition;
+	bool hasBlockSize;
 
 
 	ElementType elementType = block->getType();
 
-	if(elementType != ET_Template && (elementType == ET_TemplateArray || block->getFieldInfo()->getHasVariableSize())) {
+	hasBlockSize = elementType != ET_Template && (elementType == ET_TemplateArray || block->getFieldInfo()->getHasVariableSize());
+
+	if(hasBlockSize) {
 		blockSizePosition = ftell(file);
 		value = 0;
 		fwrite(&value, 1, 4, file);
@@ -431,7 +456,7 @@ void BtrfParser::writeBlock(FILE* file, BtrfBlock *block) {
 		break;
 	}
 
-	if(elementType != ET_Template && (elementType == ET_TemplateArray || block->getFieldInfo()->getHasVariableSize())) {
+	if(hasBlockSize) {
 		value = ftell(file) - blockSizePosition - 4;
 		fseek(file, blockSizePosition, SEEK_SET);
 		fwrite(&value, 1, 4, file);

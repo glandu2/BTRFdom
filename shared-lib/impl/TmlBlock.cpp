@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <iostream>
+#include <sstream>
 
 TmlBlock::TmlBlock()
 {
@@ -67,7 +68,7 @@ void DLLCALLCONV TmlBlock::setFieldCount(int num) {
 	}
 }
 
-bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
+bool TmlBlock::parseFile(std::istream* file, TmlFile *tmlFile) {
 	char line[1024];
 	enum State {
 		S_TemplateName,
@@ -80,9 +81,9 @@ bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
 	state = S_TemplateName;
 
 	do {
-		if(feof(file))
+		if(file->eof())
 			return false;
-		fgets(line, 1023, file);
+		file->getline(line, 1023, '\n');
 		if(line[0] == '/' && line[1] == '/')
 			continue;
 		switch(state) {
@@ -153,6 +154,13 @@ bool TmlBlock::parseFile(FILE *file, TmlFile *tmlFile) {
 					subBlock->elementType = ET_Float;
 				} else if(!strcmp(p1, "string")) {
 					subBlock->elementType = ET_String;
+				} else if(!strcmp(p1, "dict")) {
+					subBlock->elementType = ET_Dict;
+					subBlock->hasVariableSize = true;
+					hasVariableSize = true;
+					subfields.push_back(subBlock);
+					numElement++;
+					continue;
 				} else {
 					subBlock->elementType = ET_TemplateArray;
 					subBlock->subfields.push_back(tmlFile->getTemplateByName(p1));

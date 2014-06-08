@@ -39,6 +39,8 @@ public:
 	virtual ITmlBlock* DLLCALLCONV getTemplateByName(const char* name) = 0;
 
 	virtual void DLLCALLCONV addTemplate(ITmlBlock *templateStruct) = 0;
+
+	virtual void DLLCALLCONV loadNx3() = 0;
 };
 
 #ifdef __cplusplus

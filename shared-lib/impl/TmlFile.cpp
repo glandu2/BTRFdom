@@ -22,6 +22,10 @@
 #include "TmlBlock.h"
 #include <iostream>
 #include <stdlib.h>
+#include <fstream>
+#include <sstream>
+
+#include "definitions/nx3.h"
 
 TmlFile::TmlFile()
 {
@@ -63,24 +67,40 @@ TmlBlock* TmlFile::getTemplateByName(const char *name) {
 }
 
 bool TmlFile::parseFile(const char *file) {
-	TmlBlock *block;
-	FILE* tml_file;
+	std::ifstream tml_file;
 
-	tml_file = fopen(file, "rb");
-	if(!tml_file) {
+	tml_file.open(file, std::ifstream::in | std::ifstream::binary);
+
+	if(!tml_file.good()) {
 		fprintf(stderr, "Warning: cannot open template file %s\n", file);
 		return false;
 	}
 
-	while((block = new TmlBlock) != nullptr && block->parseFile(tml_file, this)) {}
+	parseFile(&tml_file);
 
-	fclose(tml_file);
+	tml_file.close();
 
 	return true;
+}
+
+void TmlFile::parseFile(std::istream* data) {
+	bool ok;
+	TmlBlock* block;
+
+	do {
+		block = new TmlBlock;
+		ok = block->parseFile(data, this);
+	} while(ok);
 }
 
 void TmlFile::addTemplate(ITmlBlock *iBlock) {
 	TmlBlock *block = static_cast<TmlBlock*>(iBlock);
 	templatesByGuid.insert(std::pair<TemplateGuid, TmlBlock*>(block->getTemplateGuid(), block));
 	templatesByName.insert(std::pair<std::string, TmlBlock*>(block->getName(), block));
+}
+
+void TmlFile::loadNx3() {
+	std::istringstream data(nx3_tml_data);
+
+	parseFile(&data);
 }
