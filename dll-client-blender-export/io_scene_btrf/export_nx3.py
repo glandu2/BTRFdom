@@ -585,11 +585,12 @@ def get_nx3_mesh_block(tmlFile, rootBlock, mesh_object, mesh_data, mesh_block_fa
 				vertex_info = VertexInfo(vertex_index, mesh_data.vertices[vertex_index].co, mesh_data.vertices[vertex_index].normal)
 
 			#index = index_of_vertex_info(vertex_info_array, vertex_info)
-			try:
+			if vertex_info in vertex_info_array:
 				index_array.append(vertex_info_array[vertex_info])
-			except:
+			else:
 				index = len(vertex_info_array)
 				vertex_info_array[vertex_info] = index
+				index_array.append(index)
 
 	mesh_frame = get_nx3_mesh_frame(tmlFile, rootBlock, mesh_object.matrix_world, vertex_info_array, vertex_groups, has_texture)
 

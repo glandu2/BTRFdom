@@ -1,3 +1,5 @@
+#!/usr/bin/kate
+#
 #
 # BTRFdom - Rappelz BTRF Document Object Model
 # By Glandu2
