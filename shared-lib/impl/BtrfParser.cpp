@@ -171,12 +171,11 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 		for(i = 0; i < subBlockCount; i++) {
 			short stringId = *file->read<short>(3);
 			unsigned char subElementType = *file->read<unsigned char>(1);
+			bool hasVariableSize = (subElementType & 0x80) == 0x80;
 
 			TmlBlock* templateField = new TmlBlock();
-			templateField->setContent(rootBlock->getString(stringId-1), (subElementType != ET_TemplateArray)? ElementType(subElementType & 0x7F) : ET_TemplateArray, ((subElementType & 0x80) == 0x80)? 0 : 1, (subElementType & 0x80) == 0x80);
+			templateField->setContent(rootBlock->getString(stringId-1), (subElementType != ET_TemplateArray)? ElementType(subElementType & 0x7F) : ET_TemplateArray, hasVariableSize? 0 : 1, hasVariableSize);
 			BtrfBlock *subBlock = new BtrfBlock(templateField, rootBlock);
-//			if(templateField->getHasVariableSize())
-//				file->read<int>(4);	//elementSize
 			readBlock(subBlock, templateField);
 
 			block->addBlock(subBlock);
