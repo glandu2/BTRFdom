@@ -206,7 +206,7 @@ def read_materials(rootBlock, file_dir):
 			# diffuse = getDataInt(getBlock(material_data_block, 8), 0)
 			# specular = getDataInt(getBlock(material_data_block, 9), 0)
 
-			texture_name = os.path.basename(texture_name.replace('\\', '/'))
+			texture_name = os.path.basename(texture_name.replace('\\', '/')).lower()
 
 			texture_file = file_dir + '/' + texture_name
 			if not os.path.exists(texture_file):
