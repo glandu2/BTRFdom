@@ -351,12 +351,13 @@ def read_mesh_block(mesh_block_template, mesh_object, bm, mtl_textures):
 		if has_texture:
 			face.material_index = material_id
 			face[tex_layer].image = material_image
-			face.loops[0][uv_layer].uv = texel_data[face_indices[1]]
-			face.loops[1][uv_layer].uv = texel_data[face_indices[2]]
-			face.loops[2][uv_layer].uv = texel_data[face_indices[0]]
+			face.loops[0][uv_layer].uv = texel_data[face_indices[0]]
+			face.loops[1][uv_layer].uv = texel_data[face_indices[1]]
+			face.loops[2][uv_layer].uv = texel_data[face_indices[2]]
 
 	#2.64: 0,0  1,1  2,2
 	#2.68: 0,1  1,2  2,0
+	#2.70: like 2.64
 
 	mesh_object.matrix_world = matrix
 
