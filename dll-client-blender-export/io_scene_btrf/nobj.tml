@@ -7,7 +7,7 @@ template ani_event
 	dword   event_time;
 	string  event_file_name;
 	dword   event_direction;
-	dword   event_property;	
+	dword   event_property;
 }
 
 template ani_event_list
@@ -35,10 +35,10 @@ template cob_header_v10
 
 	dword              mesh_part_size;
 	cob_mesh_part_list mesh_part_list[mesh_part_size];
-	
+
 	dword		       ani_list_size;
 	string             ani_list[ani_list_size];
-	
+
 	dword		       ani_event_size;
 	ani_event_list     ani_event_list[ani_event_size];
 }
@@ -63,15 +63,15 @@ template cob_header_v11
 	dword              obj_partindex;
 	dword              obj_clan;
 	dword              obj_sex;
-	
+
 	dword              render_type;
 	dword              prop_category;
 	dword              shadow_type;
 
 	float			   sel_cube[6];
-	float			   dead_cube[6];	
-	float			   visible_cube[6];	
-	float			   collide_cube[6];		
+	float			   dead_cube[6];
+	float			   visible_cube[6];
+	float			   collide_cube[6];
 
 	dword		       effpos_list_size;
 	effect_pos         effpos_list[effpos_list_size];
@@ -80,16 +80,16 @@ template cob_header_v11
 	lod_data		   lod_list[lod_list_size];
 
 	string             height_file_name;
-	
+
 	dword		       mesh_list_size;
 	string             mesh_list[mesh_list_size];
 
 	dword              mesh_part_size;
 	cob_mesh_part_list mesh_part_list[mesh_part_size];
-	
+
 	dword		       ani_list_size;
 	string             ani_list[ani_list_size];
-	
+
 	dword		       ani_event_size;
 	ani_event_list     ani_event_list[ani_event_size];
 }
@@ -100,15 +100,15 @@ template cob_header_v12
 	dword              obj_partindex;
 	dword              obj_clan;
 	dword              obj_sex;
-	
+
 	dword              render_type;
 	dword              prop_category;
 	dword              shadow_type;
 
 	float			   sel_cube[6];
-	float			   dead_cube[6];	
-	float			   visible_cube[6];	
-	float			   collide_cube[6];		
+	float			   dead_cube[6];
+	float			   visible_cube[6];
+	float			   collide_cube[6];
 
 	dword		       effpos_list_size;
 	effect_pos         effpos_list[effpos_list_size];
@@ -118,29 +118,29 @@ template cob_header_v12
 
 	string             height_file_name;
 	string             camera_collision_file_name;
-	
+
 	dword		       mesh_list_size;
 	string             mesh_list[mesh_list_size];
 
 	dword              mesh_part_size;
 	cob_mesh_part_list mesh_part_list[mesh_part_size];
-	
+
 	dword		       ani_list_size;
 	string             ani_list[ani_list_size];
-	
+
 	dword		       ani_event_size;
 	ani_event_list     ani_event_list[ani_event_size];
 }
 
 template seq_texture_data
-{H591W7G6-8EB1-8AX1-8G2K-2WDJ41EH6K73}
+{85937876-8EB1-8C81-973B-47EA41F87B73}
 {
 	dword				texture_name_list_size;
 	string				texture_name_list[texture_name_list_size];
 }
 
 template seq_data
-{A368K8L5-6AD2-2ET3-3Q5J-8SSG14JK1Q45}
+{A369B9C5-6AD2-3043-516A-A34714BB3145}
 {
 	string				str_seq_name;
 	dword				texture_group_size;
@@ -153,7 +153,7 @@ template nx3_seq_data
 	string		str_nx3_name;
 	dword		ani_part_index;
 	dword		seq_size;
-	seq_data	seq_list[seq_size];	
+	seq_data	seq_list[seq_size];
 }
 
 template mesh_texture_data
@@ -169,15 +169,15 @@ template cob_header_v13
 	dword              obj_partindex;
 	dword              obj_clan;
 	dword              obj_sex;
-	
+
 	dword              render_type;
 	dword              prop_category;
 	dword              shadow_type;
 
 	float			   sel_cube[6];
-	float			   dead_cube[6];	
-	float			   visible_cube[6];	
-	float			   collide_cube[6];		
+	float			   dead_cube[6];
+	float			   visible_cube[6];
+	float			   collide_cube[6];
 
 	dword		       effpos_list_size;
 	effect_pos         effpos_list[effpos_list_size];
@@ -187,19 +187,19 @@ template cob_header_v13
 
 	string             height_file_name;
 	string             camera_collision_file_name;
-	
+
 	dword		       mesh_list_size;
 	string             mesh_list[mesh_list_size];
 
 	dword              mesh_part_size;
 	cob_mesh_part_list mesh_part_list[mesh_part_size];
-	
+
 	dword		       ani_list_size;
 	string             ani_list[ani_list_size];
-	
+
 	dword		       ani_event_size;
 	ani_event_list     ani_event_list[ani_event_size];
-	
+
 	dword				mesh_texture_size;
 	mesh_texture_data	mesh_texture_list[mesh_texture_size];
 }
