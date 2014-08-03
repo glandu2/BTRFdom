@@ -34,9 +34,8 @@ TmlFile::TmlFile()
 
 TmlFile::~TmlFile() {
 	std::unordered_map<TemplateGuid, TmlBlock*>::iterator it;
-	std::unordered_map<TemplateGuid, TmlBlock*>::const_iterator itEnd;
 
-	for(it = templatesByGuid.begin(), itEnd = templatesByGuid.cend(); it != itEnd; ++it) {
+	for(it = templatesByGuid.begin(); it != templatesByGuid.end(); ++it) {
 		delete it->second;
 	}
 
@@ -91,6 +90,8 @@ void TmlFile::parseFile(std::istream* data) {
 		block = new TmlBlock;
 		ok = block->parseFile(data, this);
 	} while(ok);
+
+	delete block;
 }
 
 void TmlFile::addTemplate(ITmlBlock *iBlock) {

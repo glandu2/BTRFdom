@@ -38,10 +38,11 @@ TmlBlock::TmlBlock()
 
 TmlBlock::~TmlBlock() {
 	std::deque<TmlBlock*>::iterator it;
-	std::deque<TmlBlock*>::const_iterator itEnd = subfields.cend();
 
-	for(it = subfields.begin(); it != itEnd;) {
-		delete *it;
+	for(it = subfields.begin(); it != subfields.end();) {
+		TmlBlock *subblock = *it;
+		if(subblock->getType() != ET_TemplateArray)
+			delete subblock;
 		it = subfields.erase(it);
 	}
 }
@@ -61,11 +62,11 @@ unsigned char strtochar(const char str[2]) {
 }
 
 void DLLCALLCONV TmlBlock::setFieldCount(int num) {
-	if(numElement && num > numElement) {
-		std::cerr << "Error: attempt to set field count to a greater value (" << num << ") than the original (" << numElement << ")! Template's used field number is likely to be wrong\n";
-	} else {
+//	if(numElement && num > numElement) {
+//		std::cerr << "Error: attempt to set field count to a greater value (" << num << ") than the original (" << numElement << ")! Template's used field number is likely to be wrong\n";
+//	} else {
 		numElement = num;
-	}
+//	}
 }
 
 bool TmlBlock::parseFile(std::istream* file, TmlFile *tmlFile) {
@@ -133,7 +134,7 @@ bool TmlBlock::parseFile(std::istream* file, TmlFile *tmlFile) {
 			if(line[0] == '}') {
 				state = S_End;
 			} else {
-				TmlBlock *subBlock = new TmlBlock();
+				TmlBlock *subBlock;
 				char *p1, *p2;
 
 				p1 = line;
@@ -143,6 +144,8 @@ bool TmlBlock::parseFile(std::istream* file, TmlFile *tmlFile) {
 				if(!*p2 || p2 == p1)
 					continue;
 				*p2 = 0;
+
+				subBlock = new TmlBlock();
 
 				if(!strcmp(p1, "char")) {
 					subBlock->elementType = ET_Char;
@@ -170,8 +173,10 @@ bool TmlBlock::parseFile(std::istream* file, TmlFile *tmlFile) {
 				while(*p1 && isspace(*p1)) p1++;
 				p2 = p1;
 				while(*p2 && !isspace(*p2) && *p2 != '[' && *p2 != ';') p2++;
-				if(!*p2)
+				if(!*p2) {
+					delete subBlock;
 					continue;
+				}
 
 				bool wasCrochet = false;
 				if(*p2 == '[')
@@ -203,6 +208,7 @@ bool TmlBlock::parseFile(std::istream* file, TmlFile *tmlFile) {
 						//Delete the referenced field if still in field list
 						for(it = subfields.begin(); it != itEnd; ++it) {
 							if(!strcmp((*it)->name.c_str(), p1)) {
+								delete *it;
 								subfields.erase(it);
 								numElement--;
 								break;

@@ -74,7 +74,7 @@ int BtrfRootBlock::addTemplate(const TemplateGuid& guid, int usedField) {
 
 const TemplateGuid& BtrfRootBlock::getTemplateGuid(int index) {
 	if(index < 0 || index >= (int)templateList.size()) {
-		std::cerr << "Error: invalid template index: " << index << "but there is " << templateList.size() << "registered templates\n";
+		std::cerr << "Error: invalid template index: " << index << " but there is " << templateList.size() << " registered templates\n";
 		exit(-2);
 	}
 	return templateList.at(index).guid;
@@ -82,7 +82,7 @@ const TemplateGuid& BtrfRootBlock::getTemplateGuid(int index) {
 
 int BtrfRootBlock::getTemplateUsedField(int index) {
 	if(index < 0 || index >= (int)templateList.size()) {
-		std::cerr << "Error: invalid template index: " << index << "but there is " << templateList.size() << "registered templates\n";
+		std::cerr << "Error: invalid template index: " << index << " but there is " << templateList.size() << " registered templates\n";
 		exit(-2);
 	}
 	return templateList.at(index).usedFieldsNum;

@@ -1026,6 +1026,14 @@ int main(int argc, char* argv[])
 		fclose(outfile);
 	}
 
+	for(unsigned int i = 0; i < rootBlocks.size(); i++) {
+		delete rootBlocks[i];
+	}
+	rootBlocks.clear();
+
+	delete parser;
+	delete tmlFile;
+
 	return 0;
 }
 
