@@ -32,6 +32,12 @@ BtrfRootBlock::~BtrfRootBlock()
 {
 	//ctor
 	marker = "NotABtrfRootBlock";
+//	std::unordered_multimap<TemplateGuid, BtrfBlock*>::iterator it;
+
+//	for(it = blocks.begin(); it != blocks.end();) {
+//		delete it->second;
+//	}
+//	blocks.clear();
 }
 
 int BtrfRootBlock::addBlock(IBtrfBlock *iBlock) {
@@ -98,10 +104,10 @@ BtrfBlock* BtrfRootBlock::getBlockByGuid(const TemplateGuid& guid) {
 }
 
 void BtrfRootBlock::dumpToStdout(FILE *fout) {
-	fprintf(fout, "BTRF/DIFK File\n%zd root blocks\n", blockList.size());
+	fprintf(fout, "BTRF/DIFK File\n%d root blocks\n", getBlockNum());
 	for(size_t i = 0; i < blockList.size(); ++i) {
 		BtrfBlock *block = blockList.at(i);
-		fprintf(fout, "Block no %zd\n{\n", i);
+		fprintf(fout, "Block no %d\n{\n", (int)i);
 		block->dumpToStdout(fout, 1);
 		fprintf(fout, "}\n");
 	}

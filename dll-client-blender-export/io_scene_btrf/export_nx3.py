@@ -491,17 +491,18 @@ def get_nx3_mesh_frame(tmlFile, rootBlock, mesh_matrix, vertex_info_array, verte
 	block.create(fieldInfo, rootBlock)
 
 	time_value = 0
-	vertex_array = [coord for vertex_info in list(vertex_info_array.keys()) for coord in vertex_info.vertex]
-	normal_array = [coord for vertex_info in list(vertex_info_array.keys()) for coord in vertex_info.normal]
+	ordered_vertex_info = sorted(vertex_info_array, key=vertex_info_array.__getitem__)
+	vertex_array = [coord for vertex_info in ordered_vertex_info for coord in vertex_info.vertex]
+	normal_array = [coord for vertex_info in ordered_vertex_info for coord in vertex_info.normal]
 
 	if has_texel is True:
-		texel_array = [(vertex_info.texel[0], 1 - vertex_info.texel[1]) for vertex_info in list(vertex_info_array.keys())]
+		texel_array = [(vertex_info.texel[0], 1 - vertex_info.texel[1]) for vertex_info in ordered_vertex_info]
 	else:
 		texel_array = []
 
 	color_array = []
 
-	vertex_indices = [vertex_info.vertex_index for vertex_info in list(vertex_info_array.keys())]
+	vertex_indices = [vertex_info.vertex_index for vertex_info in ordered_vertex_info]
 	bone_block = [get_nx3_weight_frame(tmlFile, rootBlock, vertex_group, vertex_indices) for vertex_group in vertex_groups]
 	mesh_tm = [val for vect in mesh_matrix.transposed() for val in vect]
 
