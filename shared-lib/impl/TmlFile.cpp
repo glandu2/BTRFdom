@@ -26,6 +26,7 @@
 #include <sstream>
 
 #include "definitions/nx3.h"
+#include "definitions/nobj.h"
 
 TmlFile::TmlFile()
 {
@@ -102,6 +103,12 @@ void TmlFile::addTemplate(ITmlBlock *iBlock) {
 
 void TmlFile::loadNx3() {
 	std::istringstream data(nx3_tml_data);
+
+	parseFile(&data);
+}
+
+void TmlFile::loadNobj() {
+	std::istringstream data(nobj_tml_data);
 
 	parseFile(&data);
 }

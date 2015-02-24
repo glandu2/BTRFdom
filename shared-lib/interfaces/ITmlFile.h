@@ -41,6 +41,7 @@ public:
 	virtual void DLLCALLCONV addTemplate(ITmlBlock *templateStruct) = 0;
 
 	virtual void DLLCALLCONV loadNx3() = 0;
+	virtual void DLLCALLCONV loadNobj() = 0;
 };
 
 #ifdef __cplusplus

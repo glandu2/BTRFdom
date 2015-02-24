@@ -45,6 +45,7 @@ class TmlFile : public CImplement<ITmlFile>
 
 		//helper functions for known rappelz TML
 		virtual void DLLCALLCONV loadNx3();
+		virtual void DLLCALLCONV loadNobj();
 
 	private:
 		std::unordered_map<TemplateGuid, TmlBlock*> templatesByGuid;

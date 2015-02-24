@@ -979,13 +979,13 @@ int main(int argc, char* argv[])
 	tmlFile = createTmlFile();
 
 	if(templateFiles.size() == 0) {
-		templateFiles.push_back("nx3.tml");
-		templateFiles.push_back("nobj.tml");
-	}
-
-	for(unsigned int i = 0; i < templateFiles.size(); i++) {
-		if(!tmlFile->parseFile(templateFiles.at(i)))
-			return -1;
+		tmlFile->loadNx3();
+		tmlFile->loadNobj();
+	} else {
+		for(unsigned int i = 0; i < templateFiles.size(); i++) {
+			if(!tmlFile->parseFile(templateFiles.at(i)))
+				return -1;
+		}
 	}
 
 	IBtrfParser *parser = createBtrfParser(tmlFile);
