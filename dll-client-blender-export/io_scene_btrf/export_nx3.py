@@ -245,19 +245,21 @@ def get_materials_bones_from_object(blender_object, materials_info, bones_info):
 				materials_info[blender_object.name] = []
 			materials_info[blender_object.name].append(Material(material_index, list(materials_info.keys()).__len__() - 1, 0, material.material))
 
+	bone_name_unique_check = set()
 	if blender_object.type == 'ARMATURE':
 		for bone in blender_object.pose.bones:
 			bone_global_matrix = (bone.id_data.matrix_world.inverted() * bone.matrix).inverted().transposed()
 			tm = [val for vect in bone_global_matrix for val in vect]
-			if bone.name not in bones_info:
-				bones_info[bone.name] = BoneInfo(bone.name, tm)
+			if bone.name not in bone_name_unique_check:
+				bone_name_unique_check.add(bone.name)
+				bones_info.append(BoneInfo(bone.name, tm))
 			else:
 				raise "Bones names must be unique trough the whole file. Several bones have the name %s" % bone.name
 
 
 def get_materials_bones():
 	materials_info = {}
-	bones_info = {}
+	bones_info = []
 
 	for obj in bpy.data.objects:
 		get_materials_bones_from_object(obj, materials_info, bones_info)
@@ -753,7 +755,7 @@ def write_nx3_new_mesh_header(tmlFile, rootBlock, bones_info, materials_info):
 	objects = [obj for obj in bpy.data.objects if obj.type == 'MESH' and get_parent_mesh(obj) is None]
 
 	mesh_array = [get_nx3_new_mesh(tmlFile, rootBlock, mesh_object, materials_info) for mesh_object in objects]
-	bone_tm_array = [get_nx3_bone_tm(tmlFile, rootBlock, bone_info) for bone_info in list(bones_info.values())]
+	bone_tm_array = [get_nx3_bone_tm(tmlFile, rootBlock, bone_info) for bone_info in bones_info]
 
 	#nx3_new_mesh mesh_array[]
 	subBlock = BtrfBlock()
