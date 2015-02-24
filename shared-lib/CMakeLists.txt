@@ -1,4 +1,8 @@
-add_definitions("-DBUILDING_BTRF")
+if(BUILD_SHARED_LIBS)
+  add_definitions("-DBUILDING_BTRF")
+else()
+  add_definitions("-DBUILDING_BTRF_STATIC")
+endif()
 
 file(GLOB_RECURSE IMPL_SRC_LIST "${SHARED_LIB_PATH}/impl/*.cpp" "${SHARED_LIB_PATH}/impl/*.h")
 file(GLOB_RECURSE COMMON_SRC_LIST "${SHARED_LIB_PATH}/common/*.cpp" "${SHARED_LIB_PATH}/common/*.h")

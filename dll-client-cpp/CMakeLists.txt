@@ -1,3 +1,7 @@
+if(NOT BUILD_SHARED_LIBS)
+  add_definitions("-DBUILDING_BTRF_STATIC")
+endif()
+
 file(GLOB_RECURSE DLLCLIENT_CPP_SRC_LIST "${DLLCLIENT_CPP_LIB_PATH}/*.cpp" "${DLLCLIENT_CPP_LIB_PATH}/*.h")
 add_executable(BTRFReader ${DLLCLIENT_CPP_SRC_LIST})
 target_link_libraries(${DLLCLIENT_CPP_NAME} ${SHARED_LIB_NAME})

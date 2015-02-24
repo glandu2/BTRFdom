@@ -28,7 +28,9 @@
 #		define DLLEXPORT_BTRF
 #	endif
 #else
-#	if defined(BUILDING_BTRF)
+#	if defined(BUILDING_BTRF_STATIC)
+#		define DLLEXPORT_BTRF
+#	elif defined(BUILDING_BTRF)
 #		define DLLEXPORT_BTRF __declspec(dllexport)
 #	else
 #		define DLLEXPORT_BTRF __declspec(dllimport)
