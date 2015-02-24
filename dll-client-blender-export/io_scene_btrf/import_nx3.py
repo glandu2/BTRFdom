@@ -252,7 +252,7 @@ def read_materials(rootBlock, file_dir):
 
 
 def read_bones_weight(bone_block_template_array, vertices):
-	bones_weight = {}
+	bones_weight = []
 	for i in range(bone_block_template_array.getElementNumber()):
 		bone_block = bone_block_template_array.getBlock(i)
 		name = bone_block.getBlock(0).getDataString(0)
@@ -265,7 +265,7 @@ def read_bones_weight(bone_block_template_array, vertices):
 			warn("Bone %s in object %s has a wrong number of offsets or weights, ignoring offsets" % (name, object.name))
 			offset_array = []
 
-		bones_weight[name] = [[vertices[int(vertex_index)].index, weight] for vertex_index, weight in zip(*[iter(weight_array)] * 2)]
+		bones_weight.append((name, [[vertices[int(vertex_index)].index, weight] for vertex_index, weight in zip(*[iter(weight_array)] * 2)]))
 
 	return bones_weight
 
@@ -424,7 +424,7 @@ def read_mesh(mesh_template, materials, armature):
 	bpy.ops.object.mode_set(mode='EDIT')
 
 	for bone_weights in bones_weight:
-		for bone_name, weight_infos in list(bone_weights.items()):
+		for bone_name, weight_infos in bone_weights:
 			if bone_name not in list(armature.data.edit_bones.keys()):
 				bone = armature.data.edit_bones.new(bone_name)
 				bone.head = (0, 0, 0)
