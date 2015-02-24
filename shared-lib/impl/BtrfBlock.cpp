@@ -277,34 +277,26 @@ void BtrfBlock::dumpToStdout(FILE *fout, int indentation) {
 	switch(fieldInfo->getType()) {
 	case ET_Char:
 		fprintf(fout, "Char %s[%d] = ", getName(), numElement);
-		for(i=0; i<numElement; i++) {
-			fprintf(fout, "\t%d,\n ", (int)getDataShort(i));
-			insert_tab(fout, indentation);
-		}
+		for(i=0; i<numElement; i++)
+			fprintf(fout, "%d, ", (int)getDataChar(i));
 		break;
 
 	case ET_UChar:
 		fprintf(fout, "UChar %s[%d] = ", getName(), numElement);
-		for(i=0; i<numElement; i++) {
-			fprintf(fout, "\t%u,\n ", (unsigned int)getDataShort(i));
-			insert_tab(fout, indentation);
-		}
+		for(i=0; i<numElement; i++)
+			fprintf(fout, "%u, ", (unsigned int)getDataChar(i));
 		break;
 
 	case ET_Word:
-		fprintf(fout, "Word %s[%d] = \n", getName(), numElement);
-		for(i=0; i<numElement; i++) {
-			fprintf(fout, "\t%d,\n ", (int)getDataShort(i));
-			insert_tab(fout, indentation);
-		}
+		fprintf(fout, "Word %s[%d] = ", getName(), numElement);
+		for(i=0; i<numElement; i++)
+			fprintf(fout, "%d, ", (int)getDataShort(i));
 		break;
 
 	case ET_DWord:
 		fprintf(fout, "DWord %s[%d] = ", getName(), numElement);
-		for(i=0; i<numElement; i++) {
-			fprintf(fout, "\t%d,\n ", (int)getDataShort(i));
-			insert_tab(fout, indentation);
-		}
+		for(i=0; i<numElement; i++)
+			fprintf(fout, "%d, ", (int)getDataInt(i));
 		break;
 
 	case ET_Float:
