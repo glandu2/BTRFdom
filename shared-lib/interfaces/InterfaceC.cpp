@@ -101,10 +101,16 @@ DLLEXPORT_BTRF const TemplateGuid* DLLCALLCONV getTemplateGuidBtrfBlock(IBtrfBlo
 
 //addBlock & getBlock
 
+#if defined(_MSC_VER) && !defined(_WIN64)
+#pragma comment(linker, "/export:addBlockBtrfBlock=_addBlockBtrfBlock@8")
+#endif
 DLLEXPORT_BTRF int DLLCALLCONV addBlockBtrfBlock(IBtrfBlock *self, IBtrfBlock *other) {
 	return self->addBlock(other);
 }
 
+#if defined(_MSC_VER) && !defined(_WIN64)
+#pragma comment(linker, "/export:getBlockBtrfBlock=_getBlockBtrfBlock@8")
+#endif
 DLLEXPORT_BTRF IBtrfBlock* DLLCALLCONV getBlockBtrfBlock(IBtrfBlock *self, int index) {
 	return self->getBlock(index);
 }
@@ -147,6 +153,9 @@ DLLEXPORT_BTRF void DLLCALLCONV setDataStringIdBtrfBlock(IBtrfBlock *self, int i
 	self->setDataStringId(index, id);
 }
 
+#if defined(_MSC_VER) && !defined(_WIN64)
+#pragma comment(linker, "/export:setDataStringBtrfBlock=_setDataStringBtrfBlock@12")
+#endif
 DLLEXPORT_BTRF void DLLCALLCONV setDataStringBtrfBlock(IBtrfBlock *self, int index, const char* data) {
 	self->setDataString(index, data);
 }
