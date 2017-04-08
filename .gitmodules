@@ -1,0 +1,4 @@
+[submodule "gtest"]
+	path = gtest
+	url = ../gtest
+	branch = master
