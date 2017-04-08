@@ -42,6 +42,8 @@ public:
 
 	virtual void DLLCALLCONV loadNx3() = 0;
 	virtual void DLLCALLCONV loadNobj() = 0;
+
+	virtual void DLLCALLCONV parseStream(std::istream* data) = 0;
 };
 
 #ifdef __cplusplus

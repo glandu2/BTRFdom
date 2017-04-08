@@ -169,12 +169,12 @@ BtrfBlock *BtrfParser::readBlock(BtrfBlock *block, TmlBlock *tmlField) {
 	case ET_Dict: {
 		int subBlockCount = *file->read<int>(4);
 		for(i = 0; i < subBlockCount; i++) {
-			short stringId = *file->read<short>(3);
+			short nameStringId = *file->read<short>(3);
 			unsigned char subElementType = *file->read<unsigned char>(1);
 			bool hasVariableSize = (subElementType & 0x80) == 0x80;
 
 			TmlBlock* templateField = new TmlBlock();
-			templateField->setContent(rootBlock->getString(stringId-1), (subElementType != ET_TemplateArray)? ElementType(subElementType & 0x7F) : ET_TemplateArray, hasVariableSize? 0 : 1, hasVariableSize);
+			templateField->setContent(rootBlock->getString(nameStringId-1), (subElementType != ET_TemplateArray)? ElementType(subElementType & 0x7F) : ET_TemplateArray, hasVariableSize? 0 : 1, hasVariableSize);
 			BtrfBlock *subBlock = new BtrfBlock(templateField, rootBlock);
 			readBlock(subBlock, templateField);
 

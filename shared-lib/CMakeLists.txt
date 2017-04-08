@@ -1,13 +1,13 @@
+set(TARGET_NAME "BTRFdom")
+
+file(GLOB_RECURSE IMPL_SRC_LIST "impl/*.cpp" "impl/*.h")
+file(GLOB_RECURSE COMMON_SRC_LIST "common/*.cpp" "common/*.h")
+file(GLOB_RECURSE INTERFACES_SRC_LIST "interfaces/*.cpp" "interfaces/*.h")
+
+add_library(${TARGET_NAME} ${IMPL_SRC_LIST} ${COMMON_SRC_LIST} ${INTERFACES_SRC_LIST})
+target_include_directories(${TARGET_NAME} PUBLIC "interfaces" "common" PRIVATE "impl")
 if(BUILD_SHARED_LIBS)
-  add_definitions("-DBUILDING_BTRF")
+	target_compile_definitions(${TARGET_NAME} PRIVATE BUILDING_BTRF)
 else()
-  add_definitions("-DBUILDING_BTRF_STATIC")
+	target_compile_definitions(${TARGET_NAME} PUBLIC BUILDING_BTRF_STATIC)
 endif()
-
-file(GLOB_RECURSE IMPL_SRC_LIST "${SHARED_LIB_PATH}/impl/*.cpp" "${SHARED_LIB_PATH}/impl/*.h")
-file(GLOB_RECURSE COMMON_SRC_LIST "${SHARED_LIB_PATH}/common/*.cpp" "${SHARED_LIB_PATH}/common/*.h")
-file(GLOB_RECURSE INTERFACES_SRC_LIST "${SHARED_LIB_PATH}/interfaces/*.cpp" "${SHARED_LIB_PATH}/interfaces/*.h")
-
-include_directories("${SHARED_LIB_PATH}/impl")
-
-add_library(${SHARED_LIB_NAME} ${IMPL_SRC_LIST} ${COMMON_SRC_LIST} ${INTERFACES_SRC_LIST})

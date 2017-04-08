@@ -54,13 +54,13 @@ enum ElementType {
 	ET_TemplateArray = 0x3F*/
 	ET_None = 0x0,
 	ET_Char = 0x1,
-	ET_UChar = 0x11,
 	ET_Word = 0x2,
 	ET_DWord = 0x3,
 	ET_Float = 0x5,
 	ET_String = 0x7,
 	ET_Template = 0x9,
 	ET_Dict = 0x0A,
+	ET_UChar = 0x11,
 	//ET_TemplateArray = 0x12,
 	ET_Array = 0x13,
 
@@ -92,18 +92,16 @@ union TemplateGuid {
 	};
 
 	TemplateGuid() {
-		int i;
-		for(i=0; i<16; i++)
+		for(size_t i = 0; i < 16; i++)
 			rawData[i] = 0;
 	}
 
 	TemplateGuid(const Guid& guid) {
-		int i;
 		Data1 = guid.Data1;
 		Data2 = guid.Data2;
 		Data3 = guid.Data3;
 
-		for(i=0; i<8; i++)
+		for(size_t i = 0; i < 8; i++)
 			Data4[i] = guid.Data4[i];
 	}
 

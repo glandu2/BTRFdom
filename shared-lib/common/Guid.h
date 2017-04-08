@@ -31,7 +31,7 @@ typedef struct {
 } Guid;
 
 inline bool operator==(const Guid& guidOne, const Guid& guidOther)
-	{ return memcmp(&guidOne, &guidOther, sizeof(Guid)) == 0; }
+    { return memcmp(&guidOne, &guidOther, sizeof(Guid)) == 0; }
 inline bool operator!=(const Guid& g1, const Guid& g2)
 	{ return !(g1 == g2); }
 

@@ -47,6 +47,8 @@ class TmlFile : public CImplement<ITmlFile>
 		virtual void DLLCALLCONV loadNx3();
 		virtual void DLLCALLCONV loadNobj();
 
+		virtual void DLLCALLCONV parseStream(std::istream* data) { parseFile(data); }
+
 	private:
 		std::unordered_map<TemplateGuid, TmlBlock*> templatesByGuid;
 		std::unordered_map<std::string, TmlBlock*> templatesByName;
