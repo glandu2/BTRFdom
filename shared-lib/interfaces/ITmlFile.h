@@ -23,6 +23,7 @@
 
 #include "IObject.h"
 #include "MemberType.h"
+#include <istream>
 
 class ITmlBlock;
 
